@@ -1,0 +1,22 @@
+{
+  "name": "notification-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ShipTrack Notification Service - email notifications for shipment/delivery updates",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@shiptrack/common": "*",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "nodemailer": "^9.1.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}

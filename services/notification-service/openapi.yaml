@@ -1,0 +1,54 @@
+openapi: 3.1.0
+info:
+  title: ShipTrack Notification Service
+  version: "1.0.0"
+  description: Email notifications for shipment/delivery updates.
+servers:
+  - url: http://localhost:8010
+  - url: http://localhost:8000/api/v1/notifications
+    description: Via API Gateway
+tags:
+  - name: Notifications
+paths:
+  /api/v1/notifications/send:
+    post:
+      tags: [Notifications]
+      summary: Send an email notification (server-to-server, or admin testing)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SendNotificationRequest' } } }
+      responses:
+        '201': { description: Sent }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/v1/notifications:
+    get:
+      tags: [Notifications]
+      summary: Recent notification history (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        '200': { description: History }
+        '403': { $ref: '#/components/responses/Forbidden' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    SendNotificationRequest:
+      type: object
+      required: [to]
+      properties:
+        to: { type: string, format: email }
+        type: { type: string, enum: [WELCOME, SHIPMENT_CREATED, SHIPMENT_UPDATE, DELIVERY, GENERIC] }
+        subject: { type: string }
+        message: { type: string }
+        data: { type: object }
+    Error:
+      type: object
+      properties:
+        error: { type: object }
+  responses:
+    BadRequest: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Forbidden: { description: Insufficient permissions, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
