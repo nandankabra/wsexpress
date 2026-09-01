@@ -292,9 +292,6 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        VITE_API_BASE_URL: /api/v1
-        VITE_GRAPHQL_URL: /graphql
     container_name: shiptrack-node-frontend
     ports:
       - "${FRONTEND_HOST_PORT:-3000}:80"

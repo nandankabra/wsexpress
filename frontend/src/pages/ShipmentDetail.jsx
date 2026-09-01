@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getShipment, updateShipmentStatus, updateDelivery } from '../api/shipments';
+import { getShipment, updateShipmentStatus, updateDelivery, assignCarrier } from '../api/shipments';
 import { listTrackingEvents } from '../api/tracking';
+import { listCarriers } from '../api/carriers';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/Card';
 import StatusBadge from '../components/StatusBadge';
@@ -22,6 +23,8 @@ export default function ShipmentDetail() {
   const [events, setEvents] = useState([]);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [carriers, setCarriers] = useState([]);
+  const [selectedCarrierId, setSelectedCarrierId] = useState('');
 
   async function load() {
     const s = await getShipment(id);
@@ -34,6 +37,27 @@ export default function ShipmentDetail() {
     load().catch(() => setError('Could not load this shipment.'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (user?.role === 'ADMIN') {
+      listCarriers({ limit: 50 }).then((r) => setCarriers(r.data)).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  async function handleAssignCarrier() {
+    if (!selectedCarrierId) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await assignCarrier(id, selectedCarrierId, shipment.version);
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Could not assign carrier');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function handleStatusChange(status) {
     setBusy(true);
@@ -93,6 +117,32 @@ export default function ShipmentDetail() {
       </div>
 
       {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+
+      {user?.role === 'ADMIN' && !shipment.carrierId && (
+        <Card title="Assign Carrier" className="mt-6">
+          <div className="flex gap-2">
+            <select
+              value={selectedCarrierId}
+              onChange={(e) => setSelectedCarrierId(e.target.value)}
+              className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
+            >
+              <option value="">Select a carrier...</option>
+              {carriers.map((c) => (
+                <option key={c.userId} value={c.userId}>
+                  {c.companyName} {c.isVerified ? '' : '(unverified)'}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={handleAssignCarrier}
+              disabled={busy || !selectedCarrierId}
+              className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            >
+              Assign
+            </button>
+          </div>
+        </Card>
+      )}
 
       {canManage && nextOptions.length > 0 && (
         <Card title="Update Status" className="mt-6">
