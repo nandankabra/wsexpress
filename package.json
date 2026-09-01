@@ -1,0 +1,19 @@
+{
+  "name": "shiptrack",
+  "private": true,
+  "version": "1.0.0",
+  "description": "ShipTrack - Logistics & Shipment Tracking Platform (Node.js/Express microservices + React)",
+  "workspaces": [
+    "common",
+    "services/*",
+    "frontend"
+  ],
+  "scripts": {
+    "test": "npm test --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

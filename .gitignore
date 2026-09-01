@@ -8,3 +8,19 @@ target/
 HELP.md
 .mvn/wrapper/maven-wrapper.jar
 .env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+dist/
+build/
+coverage/
+.nyc_output/
+
+# Frontend
+frontend/dist/
+
+# Docker volumes data (if any bind mounts land here)
+infra/**/data/

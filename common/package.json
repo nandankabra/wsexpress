@@ -1,0 +1,35 @@
+{
+  "name": "@shiptrack/common",
+  "version": "1.0.0",
+  "description": "Shared middleware and utilities for ShipTrack microservices",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "axios": "^1.7.9",
+    "axios-retry": "^4.5.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "js2xmlparser": "^5.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "opossum": "^8.1.4",
+    "pino": "^9.5.0",
+    "pino-http": "^10.3.0",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.0.3",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0",
+    "express": "^4.21.2"
+  },
+  "peerDependencies": {
+    "express": "^4.21.2"
+  }
+}
