@@ -4,10 +4,12 @@ process.env.NODE_ENV = 'test';
 
 jest.mock('../src/models/userModel');
 jest.mock('../src/models/refreshTokenModel');
+jest.mock('../src/clients/crmClient');
 
 const request = require('supertest');
 const userModel = require('../src/models/userModel');
 const refreshTokenModel = require('../src/models/refreshTokenModel');
+const crmClient = require('../src/clients/crmClient');
 const { buildApp } = require('../src/app');
 
 const app = buildApp();
@@ -31,10 +33,11 @@ describe('POST /api/v1/auth/register', () => {
     expect(res.body.error.code).toBe('BAD_REQUEST');
   });
 
-  test('creates a CUSTOMER account and returns tokens', async () => {
+  test('creates a CUSTOMER account, returns tokens, and records a CRM analytics event', async () => {
     userModel.findByEmail.mockResolvedValue(null);
     userModel.create.mockResolvedValue({ ...existingUser, id: 'new-id' });
     refreshTokenModel.store.mockResolvedValue();
+    crmClient.recordEvent.mockResolvedValue(null);
 
     const res = await request(app)
       .post('/api/v1/auth/register')
@@ -46,6 +49,11 @@ describe('POST /api/v1/auth/register', () => {
     expect(res.body.refreshToken).toBeDefined();
     expect(userModel.create).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'grace@example.com', role: 'CUSTOMER' }),
+    );
+    expect(crmClient.recordEvent).toHaveBeenCalledWith(
+      'CUSTOMER_REGISTERED',
+      expect.objectContaining({ entityId: 'new-id' }),
+      expect.anything(),
     );
   });
 

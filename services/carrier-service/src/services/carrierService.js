@@ -1,5 +1,6 @@
 const { ApiError, paginate, decodeCursor } = require('@shiptrack/common');
 const carrierModel = require('../models/carrierModel');
+const crmClient = require('../clients/crmClient');
 
 function toResponse(row) {
   return {
@@ -27,9 +28,14 @@ async function getCarrier(userId) {
   return toResponse(row);
 }
 
-async function verifyCarrier(userId, isVerified) {
+async function verifyCarrier(userId, isVerified, correlationId) {
   const row = await carrierModel.setVerified(userId, isVerified);
   if (!row) throw ApiError.notFound('Carrier profile not found');
+
+  if (isVerified) {
+    await crmClient.recordEvent('CARRIER_VERIFIED', { entityId: userId, carrierId: userId }, correlationId);
+  }
+
   return toResponse(row);
 }
 

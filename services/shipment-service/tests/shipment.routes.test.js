@@ -5,12 +5,14 @@ process.env.NODE_ENV = 'test';
 jest.mock('../src/models/shipmentModel');
 jest.mock('../src/clients/pricingClient');
 jest.mock('../src/clients/trackingClient');
+jest.mock('../src/clients/crmClient');
 
 const request = require('supertest');
 const { signAccessToken } = require('@shiptrack/common');
 const shipmentModel = require('../src/models/shipmentModel');
 const pricingClient = require('../src/clients/pricingClient');
 const trackingClient = require('../src/clients/trackingClient');
+const crmClient = require('../src/clients/crmClient');
 const { buildApp } = require('../src/app');
 
 const app = buildApp();
@@ -79,6 +81,7 @@ describe('POST /api/v1/shipments', () => {
     pricingClient.getQuote.mockResolvedValue({ priceAmount: 25, currency: 'USD', estimatedDays: 5 });
     shipmentModel.create.mockResolvedValue(dbRow);
     trackingClient.recordEvent.mockResolvedValue(null);
+    crmClient.recordEvent.mockResolvedValue(null);
 
     const res = await request(app)
       .post('/api/v1/shipments')
@@ -91,6 +94,11 @@ describe('POST /api/v1/shipments', () => {
     expect(trackingClient.recordEvent).toHaveBeenCalledWith(
       'STKABC123',
       expect.objectContaining({ status: 'CREATED' }),
+      expect.anything(),
+    );
+    expect(crmClient.recordEvent).toHaveBeenCalledWith(
+      'SHIPMENT_CREATED',
+      expect.objectContaining({ entityId: 'ship-1', customerId: 'customer-1' }),
       expect.anything(),
     );
   });
@@ -159,7 +167,7 @@ describe('PATCH /api/v1/shipments/:id/status', () => {
     expect(res.status).toBe(412);
   });
 
-  test('updates status and fires a tracking event', async () => {
+  test('updates status and fires a tracking event, but no CRM event for a non-terminal status', async () => {
     shipmentModel.findById.mockResolvedValue(dbRow);
     shipmentModel.updateStatus.mockResolvedValue({ ...dbRow, status: 'PICKED_UP', version: 2 });
     trackingClient.recordEvent.mockResolvedValue(null);
@@ -172,5 +180,26 @@ describe('PATCH /api/v1/shipments/:id/status', () => {
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('PICKED_UP');
     expect(trackingClient.recordEvent).toHaveBeenCalled();
+    expect(crmClient.recordEvent).not.toHaveBeenCalled();
+  });
+
+  test('transitioning to DELIVERED records a SHIPMENT_DELIVERED CRM event', async () => {
+    const outForDelivery = { ...dbRow, status: 'OUT_FOR_DELIVERY', carrier_id: 'carrier-1' };
+    shipmentModel.findById.mockResolvedValue(outForDelivery);
+    shipmentModel.updateStatus.mockResolvedValue({ ...outForDelivery, status: 'DELIVERED', version: 5 });
+    trackingClient.recordEvent.mockResolvedValue(null);
+    crmClient.recordEvent.mockResolvedValue(null);
+
+    const res = await request(app)
+      .patch('/api/v1/shipments/ship-1/status')
+      .set('Authorization', `Bearer ${carrierToken}`)
+      .send({ status: 'DELIVERED', expectedVersion: 4 });
+
+    expect(res.status).toBe(200);
+    expect(crmClient.recordEvent).toHaveBeenCalledWith(
+      'SHIPMENT_DELIVERED',
+      expect.objectContaining({ entityId: 'ship-1', carrierId: 'carrier-1' }),
+      expect.anything(),
+    );
   });
 });

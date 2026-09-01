@@ -8,6 +8,7 @@ const {
 } = require('@shiptrack/common');
 const userModel = require('../models/userModel');
 const refreshTokenModel = require('../models/refreshTokenModel');
+const crmClient = require('../clients/crmClient');
 
 function refreshExpiryDate() {
   const days = 7;
@@ -33,7 +34,7 @@ async function issueTokens(user) {
   return { accessToken, refreshToken };
 }
 
-async function register({ name, email, password }) {
+async function register({ name, email, password }, correlationId) {
   const existing = await userModel.findByEmail(email);
   if (existing) {
     throw ApiError.conflict('An account with this email already exists');
@@ -41,6 +42,9 @@ async function register({ name, email, password }) {
   const passwordHash = await hashPassword(password);
   const user = await userModel.create({ name, email, passwordHash, role: 'CUSTOMER' });
   const tokens = await issueTokens(user);
+
+  await crmClient.recordEvent('CUSTOMER_REGISTERED', { entityId: user.id, customerId: user.id }, correlationId);
+
   return { user: toUserResponse(user), ...tokens };
 }
 

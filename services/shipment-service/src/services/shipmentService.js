@@ -3,6 +3,7 @@ const { ApiError, paginate, decodeCursor } = require('@shiptrack/common');
 const shipmentModel = require('../models/shipmentModel');
 const pricingClient = require('../clients/pricingClient');
 const trackingClient = require('../clients/trackingClient');
+const crmClient = require('../clients/crmClient');
 
 const NEXT_STATUS = {
   CREATED: ['PICKED_UP', 'CANCELLED'],
@@ -97,6 +98,12 @@ async function createShipment(customerId, body, correlationId) {
     correlationId,
   );
 
+  await crmClient.recordEvent(
+    'SHIPMENT_CREATED',
+    { entityId: row.id, customerId, metadata: { trackingId: row.tracking_id } },
+    correlationId,
+  );
+
   return toResponse(row);
 }
 
@@ -153,6 +160,14 @@ async function updateStatus(id, actor, { status, expectedVersion }, correlationI
     { status, location: updated.destination_city, note: `Status updated to ${status}` },
     correlationId,
   );
+
+  if (status === 'DELIVERED' || status === 'CANCELLED') {
+    await crmClient.recordEvent(
+      status === 'DELIVERED' ? 'SHIPMENT_DELIVERED' : 'SHIPMENT_CANCELLED',
+      { entityId: updated.id, customerId: updated.customer_id, carrierId: updated.carrier_id, metadata: { trackingId: updated.tracking_id } },
+      correlationId,
+    );
+  }
 
   return toResponse(updated);
 }

@@ -26,7 +26,7 @@ async function getById(req, res, next) {
 
 async function verify(req, res, next) {
   try {
-    res.status(200).json(await carrierService.verifyCarrier(req.params.userId, req.body.isVerified));
+    res.status(200).json(await carrierService.verifyCarrier(req.params.userId, req.body.isVerified, req.correlationId));
   } catch (err) {
     next(err);
   }
