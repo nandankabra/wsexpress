@@ -11,5 +11,8 @@ RUN npm install --workspace=@shiptrack/common --workspace=audit-service --omit=d
 
 WORKDIR /app/services/audit-service
 
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+  CMD wget -qO- http://localhost:8009/health || exit 1
+
 EXPOSE 8009
 CMD ["node", "src/server.js"]

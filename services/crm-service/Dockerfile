@@ -11,5 +11,8 @@ RUN npm install --workspace=@shiptrack/common --workspace=crm-service --omit=dev
 
 WORKDIR /app/services/crm-service
 
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+  CMD wget -qO- http://localhost:8008/health || exit 1
+
 EXPOSE 8008
 CMD ["node", "src/server.js"]

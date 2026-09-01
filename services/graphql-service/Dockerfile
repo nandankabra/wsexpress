@@ -11,5 +11,8 @@ RUN npm install --workspace=@shiptrack/common --workspace=graphql-service --omit
 
 WORKDIR /app/services/graphql-service
 
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+  CMD wget -qO- http://localhost:8011/health || exit 1
+
 EXPOSE 8011
 CMD ["node", "src/server.js"]

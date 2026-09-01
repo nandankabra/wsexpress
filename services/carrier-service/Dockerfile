@@ -11,5 +11,8 @@ RUN npm install --workspace=@shiptrack/common --workspace=carrier-service --omit
 
 WORKDIR /app/services/carrier-service
 
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+  CMD wget -qO- http://localhost:8003/health || exit 1
+
 EXPOSE 8003
 CMD ["node", "src/server.js"]

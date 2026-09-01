@@ -11,5 +11,8 @@ RUN npm install --workspace=@shiptrack/common --workspace=auth-service --omit=de
 
 WORKDIR /app/services/auth-service
 
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+  CMD wget -qO- http://localhost:8001/health || exit 1
+
 EXPOSE 8001
 CMD ["node", "src/server.js"]

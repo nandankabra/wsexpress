@@ -27,7 +27,7 @@ async function findByTrackingId(trackingId) {
   return rows[0] || null;
 }
 
-async function listPage({ limit, afterId, customerId, carrierId, status }) {
+async function listPage({ limit, afterId, customerId, carrierId, carrierScope, status }) {
   const clauses = ['($1::uuid IS NULL OR id > $1)'];
   const params = [afterId || null];
 
@@ -35,7 +35,12 @@ async function listPage({ limit, afterId, customerId, carrierId, status }) {
     params.push(customerId);
     clauses.push(`customer_id = $${params.length}`);
   }
-  if (carrierId) {
+  if (carrierScope) {
+    // A carrier's shipment list includes shipments already assigned to them plus
+    // unassigned ones available to claim (mirrors the single-resource view/claim rules).
+    params.push(carrierScope);
+    clauses.push(`(carrier_id = $${params.length} OR carrier_id IS NULL)`);
+  } else if (carrierId) {
     params.push(carrierId);
     clauses.push(`carrier_id = $${params.length}`);
   }

@@ -1,0 +1,303 @@
+name: shiptrack-node
+
+networks:
+  shiptrack-node-net:
+    driver: bridge
+
+volumes:
+  shiptrack-node-postgres-data:
+  shiptrack-node-mysql-data:
+  shiptrack-node-mongo-data:
+
+x-node-env: &node-env
+  NODE_ENV: production
+  JWT_SECRET: ${JWT_SECRET:-dev-access-secret-change-me}
+  JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-refresh-secret-change-me}
+  ACCESS_TOKEN_TTL: ${ACCESS_TOKEN_TTL:-15m}
+  REFRESH_TOKEN_TTL: ${REFRESH_TOKEN_TTL:-7d}
+  CORS_ORIGIN: "*"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: shiptrack-node-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-shiptrack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-shiptrack}
+      POSTGRES_DB: postgres
+    ports:
+      - "${POSTGRES_HOST_PORT:-15432}:5432"
+    volumes:
+      - shiptrack-node-postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shiptrack}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [shiptrack-node-net]
+
+  mysql:
+    image: mysql:8.4
+    container_name: shiptrack-node-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_USER: ${MYSQL_USER:-shiptrack}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-shiptrack}
+    ports:
+      - "${MYSQL_HOST_PORT:-13306}:3306"
+    volumes:
+      - shiptrack-node-mysql-data:/var/lib/mysql
+      - ./infra/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [shiptrack-node-net]
+
+  mongo:
+    image: mongo:7
+    container_name: shiptrack-node-mongo
+    ports:
+      - "${MONGO_HOST_PORT:-27018}:27017"
+    volumes:
+      - shiptrack-node-mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [shiptrack-node-net]
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    container_name: shiptrack-node-auth
+    environment:
+      <<: *node-env
+      PORT: 8001
+      DATABASE_URL: postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/auth_db
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@shiptrack.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@12345}
+    ports: ["8001:8001"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  user-service:
+    build:
+      context: .
+      dockerfile: services/user-service/Dockerfile
+    container_name: shiptrack-node-user
+    environment:
+      <<: *node-env
+      PORT: 8002
+      DATABASE_URL: postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/user_db
+    ports: ["8002:8002"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  carrier-service:
+    build:
+      context: .
+      dockerfile: services/carrier-service/Dockerfile
+    container_name: shiptrack-node-carrier
+    environment:
+      <<: *node-env
+      PORT: 8003
+      DATABASE_URL: postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/carrier_db
+    ports: ["8003:8003"]
+    depends_on:
+      postgres: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  shipment-service:
+    build:
+      context: .
+      dockerfile: services/shipment-service/Dockerfile
+    container_name: shiptrack-node-shipment
+    environment:
+      <<: *node-env
+      PORT: 8004
+      DATABASE_URL: postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/shipment_db
+      PRICING_SERVICE_URL: http://pricing-service:8006
+      TRACKING_SERVICE_URL: http://tracking-service:8005
+      OUTBOUND_TIMEOUT_MS: 3000
+      OUTBOUND_RETRIES: 2
+    ports: ["8004:8004"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      pricing-service: { condition: service_healthy }
+      tracking-service: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  tracking-service:
+    build:
+      context: .
+      dockerfile: services/tracking-service/Dockerfile
+    container_name: shiptrack-node-tracking
+    environment:
+      <<: *node-env
+      PORT: 8005
+      MONGO_URL: mongodb://mongo:27017/tracking_db
+    ports: ["8005:8005"]
+    depends_on:
+      mongo: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  pricing-service:
+    build:
+      context: .
+      dockerfile: services/pricing-service/Dockerfile
+    container_name: shiptrack-node-pricing
+    environment:
+      <<: *node-env
+      PORT: 8006
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-shiptrack}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-shiptrack}
+      MYSQL_DATABASE: pricing_db
+      LOCATION_SERVICE_URL: http://location-service:8007
+      OUTBOUND_TIMEOUT_MS: 3000
+      OUTBOUND_RETRIES: 2
+    ports: ["8006:8006"]
+    depends_on:
+      mysql: { condition: service_healthy }
+      location-service: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  location-service:
+    build:
+      context: .
+      dockerfile: services/location-service/Dockerfile
+    container_name: shiptrack-node-location
+    environment:
+      <<: *node-env
+      PORT: 8007
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-shiptrack}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-shiptrack}
+      MYSQL_DATABASE: location_db
+    ports: ["8007:8007"]
+    depends_on:
+      mysql: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  crm-service:
+    build:
+      context: .
+      dockerfile: services/crm-service/Dockerfile
+    container_name: shiptrack-node-crm
+    environment:
+      <<: *node-env
+      PORT: 8008
+      MONGO_URL: mongodb://mongo:27017/crm_db
+    ports: ["8008:8008"]
+    depends_on:
+      mongo: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  audit-service:
+    build:
+      context: .
+      dockerfile: services/audit-service/Dockerfile
+    container_name: shiptrack-node-audit
+    environment:
+      <<: *node-env
+      PORT: 8009
+      MONGO_URL: mongodb://mongo:27017/audit_db
+    ports: ["8009:8009"]
+    depends_on:
+      mongo: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    container_name: shiptrack-node-notification
+    environment:
+      <<: *node-env
+      PORT: 8010
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-ShipTrack <no-reply@shiptrack.local>}
+    ports: ["8010:8010"]
+    networks: [shiptrack-node-net]
+
+  graphql-service:
+    build:
+      context: .
+      dockerfile: services/graphql-service/Dockerfile
+    container_name: shiptrack-node-graphql
+    environment:
+      <<: *node-env
+      PORT: 8011
+      SHIPMENT_SERVICE_URL: http://shipment-service:8004
+      TRACKING_SERVICE_URL: http://tracking-service:8005
+      USER_SERVICE_URL: http://user-service:8002
+      OUTBOUND_TIMEOUT_MS: 3000
+      OUTBOUND_RETRIES: 2
+    ports: ["8011:8011"]
+    depends_on:
+      shipment-service: { condition: service_healthy }
+      tracking-service: { condition: service_healthy }
+      user-service: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    container_name: shiptrack-node-gateway
+    environment:
+      <<: *node-env
+      PORT: 8000
+      AUTH_SERVICE_URL: http://auth-service:8001
+      USER_SERVICE_URL: http://user-service:8002
+      CARRIER_SERVICE_URL: http://carrier-service:8003
+      SHIPMENT_SERVICE_URL: http://shipment-service:8004
+      TRACKING_SERVICE_URL: http://tracking-service:8005
+      PRICING_SERVICE_URL: http://pricing-service:8006
+      LOCATION_SERVICE_URL: http://location-service:8007
+      CRM_SERVICE_URL: http://crm-service:8008
+      AUDIT_SERVICE_URL: http://audit-service:8009
+      NOTIFICATION_SERVICE_URL: http://notification-service:8010
+      GRAPHQL_SERVICE_URL: http://graphql-service:8011
+      PROXY_TIMEOUT_MS: 5000
+    ports:
+      - "${GATEWAY_HOST_PORT:-8000}:8000"
+    depends_on:
+      auth-service: { condition: service_healthy }
+      user-service: { condition: service_healthy }
+      carrier-service: { condition: service_healthy }
+      shipment-service: { condition: service_healthy }
+      tracking-service: { condition: service_healthy }
+      pricing-service: { condition: service_healthy }
+      location-service: { condition: service_healthy }
+      crm-service: { condition: service_healthy }
+      audit-service: { condition: service_healthy }
+      notification-service: { condition: service_healthy }
+      graphql-service: { condition: service_healthy }
+    networks: [shiptrack-node-net]
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: /api/v1
+        VITE_GRAPHQL_URL: /graphql
+    container_name: shiptrack-node-frontend
+    ports:
+      - "${FRONTEND_HOST_PORT:-3000}:80"
+    depends_on:
+      api-gateway: { condition: service_healthy }
+    networks: [shiptrack-node-net]

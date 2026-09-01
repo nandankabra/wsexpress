@@ -11,5 +11,8 @@ RUN npm install --workspace=@shiptrack/common --workspace=user-service --omit=de
 
 WORKDIR /app/services/user-service
 
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+  CMD wget -qO- http://localhost:8002/health || exit 1
+
 EXPOSE 8002
 CMD ["node", "src/server.js"]

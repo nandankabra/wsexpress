@@ -125,7 +125,7 @@ async function listShipments(actor, { cursor, limit = 20, status }) {
   const after = decodeCursor(cursor);
   const filters = { limit, afterId: after ? after.id : null, status };
   if (actor.role === 'CUSTOMER') filters.customerId = actor.sub;
-  if (actor.role === 'CARRIER') filters.carrierId = actor.sub;
+  if (actor.role === 'CARRIER') filters.carrierScope = actor.sub;
 
   const rows = await shipmentModel.listPage(filters);
   const result = paginate(rows, limit, (row) => ({ id: row.id }));

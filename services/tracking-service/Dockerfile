@@ -11,5 +11,8 @@ RUN npm install --workspace=@shiptrack/common --workspace=tracking-service --omi
 
 WORKDIR /app/services/tracking-service
 
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+  CMD wget -qO- http://localhost:8005/health || exit 1
+
 EXPOSE 8005
 CMD ["node", "src/server.js"]

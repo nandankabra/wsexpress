@@ -11,5 +11,8 @@ RUN npm install --workspace=@shiptrack/common --workspace=notification-service -
 
 WORKDIR /app/services/notification-service
 
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+  CMD wget -qO- http://localhost:8010/health || exit 1
+
 EXPOSE 8010
 CMD ["node", "src/server.js"]

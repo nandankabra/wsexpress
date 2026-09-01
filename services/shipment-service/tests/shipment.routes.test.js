@@ -112,6 +112,18 @@ describe('GET /api/v1/shipments/:id', () => {
   });
 });
 
+describe('GET /api/v1/shipments (carrier scope)', () => {
+  test('a carrier sees their own assigned and unassigned (claimable) shipments', async () => {
+    shipmentModel.listPage.mockResolvedValue([dbRow]);
+    const res = await request(app).get('/api/v1/shipments').set('Authorization', `Bearer ${carrierToken}`);
+    expect(res.status).toBe(200);
+    expect(shipmentModel.listPage).toHaveBeenCalledWith(
+      expect.objectContaining({ carrierScope: 'carrier-1' }),
+    );
+    expect(shipmentModel.listPage.mock.calls[0][0].carrierId).toBeUndefined();
+  });
+});
+
 describe('PATCH /api/v1/shipments/:id/status', () => {
   test('rejects an invalid state transition', async () => {
     shipmentModel.findById.mockResolvedValue({ ...dbRow, status: 'DELIVERED' });

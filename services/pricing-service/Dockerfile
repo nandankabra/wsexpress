@@ -11,5 +11,8 @@ RUN npm install --workspace=@shiptrack/common --workspace=pricing-service --omit
 
 WORKDIR /app/services/pricing-service
 
+HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=5 \
+  CMD wget -qO- http://localhost:8006/health || exit 1
+
 EXPOSE 8006
 CMD ["node", "src/server.js"]
