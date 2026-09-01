@@ -1,11 +1,11 @@
 {
   "info": {
     "name": "ShipTrack API",
-    "description": "ShipTrack - Logistics & Shipment Tracking Platform. All requests go through the API Gateway ({{baseUrl}}, default http://localhost:8000). Run 'Auth > Register Customer' and 'Auth > Admin Login' first to populate {{accessToken}} and {{adminAccessToken}}.",
+    "description": "ShipTrack - Logistics & Shipment Tracking Platform. All requests go through the API Gateway ({{baseUrl}}, default http://localhost:18000 for docker-compose - use http://localhost:8000 if running api-gateway natively without Docker). Run 'Auth > Register Customer' and 'Auth > Admin Login' first to populate {{accessToken}} and {{adminAccessToken}}.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "baseUrl", "value": "http://localhost:18000" },
     { "key": "accessToken", "value": "" },
     { "key": "refreshToken", "value": "" },
     { "key": "adminAccessToken", "value": "" },

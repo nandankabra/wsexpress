@@ -60,7 +60,7 @@ services:
     image: mongo:7
     container_name: shiptrack-node-mongo
     ports:
-      - "${MONGO_HOST_PORT:-27018}:27017"
+      - "${MONGO_HOST_PORT:-27019}:27017"
     volumes:
       - shiptrack-node-mongo-data:/data/db
     healthcheck:
@@ -273,7 +273,7 @@ services:
       GRAPHQL_SERVICE_URL: http://graphql-service:8011
       PROXY_TIMEOUT_MS: 5000
     ports:
-      - "${GATEWAY_HOST_PORT:-8000}:8000"
+      - "${GATEWAY_HOST_PORT:-18000}:8000"
     depends_on:
       auth-service: { condition: service_healthy }
       user-service: { condition: service_healthy }
@@ -294,7 +294,7 @@ services:
       dockerfile: Dockerfile
     container_name: shiptrack-node-frontend
     ports:
-      - "${FRONTEND_HOST_PORT:-3000}:80"
+      - "${FRONTEND_HOST_PORT:-3001}:80"
     depends_on:
       api-gateway: { condition: service_healthy }
     networks: [shiptrack-node-net]

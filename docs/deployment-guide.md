@@ -6,9 +6,10 @@ This is the primary, fully-tested deployment path.
 
 ### Prerequisites
 - Docker + Docker Compose v2
-- Ports available on the host: `15432` (Postgres), `13306` (MySQL), `27018` (Mongo), `8000-8011`
-  (services), `3000` (frontend). Override any of these in `.env` if they're already taken on
-  your machine.
+- Ports available on the host: `15432` (Postgres), `13306` (MySQL), `27019` (Mongo), `8001-8011`
+  (individual services), `18000` (API Gateway), `3001` (frontend). Override any of these in
+  `.env` if they're already taken on your machine - the defaults deliberately avoid the common
+  `8000`/`3000`/`27018` in case something else on the host is already using them.
 
 ### Steps
 
@@ -19,12 +20,12 @@ docker compose ps          # wait until everything shows "healthy"
 ```
 
 Once healthy:
-- Frontend: http://localhost:3000
-- API Gateway: http://localhost:8000 (Swagger at http://localhost:8000/api-docs)
+- Frontend: http://localhost:3001
+- API Gateway: http://localhost:18000 (Swagger at http://localhost:18000/api-docs)
 - Every service's own Swagger UI: `http://localhost:<port>/api-docs` (e.g. auth-service at
   http://localhost:8001/api-docs)
 - GraphQL: http://localhost:8011/graphql (Apollo Sandbox in a browser) or via the gateway at
-  http://localhost:8000/graphql
+  http://localhost:18000/graphql
 - location-service SOAP WSDL: http://localhost:8007/wsdl/country?wsdl
 - pricing-service SOAP WSDL: http://localhost:8006/wsdl/currency?wsdl
 
