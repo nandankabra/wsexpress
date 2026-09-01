@@ -1,0 +1,90 @@
+openapi: 3.1.0
+info:
+  title: ShipTrack API Gateway
+  version: "1.0.0"
+  description: >
+    Single entry point for the ShipTrack platform. Performs routing, gateway-level JWT
+    validation, rate limiting, structured logging, and correlation-id propagation, then
+    reverse-proxies to the appropriate downstream microservice. Each downstream service
+    still enforces its own detailed RBAC and publishes its own full OpenAPI spec at its
+    own /api-docs - see each service's openapi.yaml for the authoritative per-route contract.
+servers:
+  - url: http://localhost:8000
+tags:
+  - name: Gateway
+paths:
+  /health:
+    get:
+      tags: [Gateway]
+      summary: Gateway health check
+      responses:
+        '200': { description: UP }
+  /api/v1/auth/{proxy+}:
+    get:
+      tags: [Gateway]
+      summary: Proxied to auth-service (see its own openapi.yaml for the full contract)
+      parameters: [{ name: proxy+, in: path, required: false, schema: { type: string } }]
+      responses:
+        '200': { description: Proxied response }
+  /api/v1/customers/{proxy+}:
+    get:
+      tags: [Gateway]
+      summary: Proxied to user-service
+      parameters: [{ name: proxy+, in: path, required: false, schema: { type: string } }]
+      responses: { '200': { description: Proxied response } }
+  /api/v1/carriers/{proxy+}:
+    get:
+      tags: [Gateway]
+      summary: Proxied to carrier-service
+      parameters: [{ name: proxy+, in: path, required: false, schema: { type: string } }]
+      responses: { '200': { description: Proxied response } }
+  /api/v1/shipments/{proxy+}:
+    get:
+      tags: [Gateway]
+      summary: Proxied to shipment-service
+      parameters: [{ name: proxy+, in: path, required: false, schema: { type: string } }]
+      responses: { '200': { description: Proxied response } }
+  /api/v1/tracking/{proxy+}:
+    get:
+      tags: [Gateway]
+      summary: Proxied to tracking-service
+      parameters: [{ name: proxy+, in: path, required: false, schema: { type: string } }]
+      responses: { '200': { description: Proxied response } }
+  /api/v1/pricing/{proxy+}:
+    get:
+      tags: [Gateway]
+      summary: Proxied to pricing-service
+      parameters: [{ name: proxy+, in: path, required: false, schema: { type: string } }]
+      responses: { '200': { description: Proxied response } }
+  /api/v1/locations/{proxy+}:
+    get:
+      tags: [Gateway]
+      summary: Proxied to location-service
+      parameters: [{ name: proxy+, in: path, required: false, schema: { type: string } }]
+      responses: { '200': { description: Proxied response } }
+  /api/v1/crm/{proxy+}:
+    get:
+      tags: [Gateway]
+      summary: Proxied to crm-service
+      parameters: [{ name: proxy+, in: path, required: false, schema: { type: string } }]
+      responses: { '200': { description: Proxied response } }
+  /api/v1/audit/{proxy+}:
+    get:
+      tags: [Gateway]
+      summary: Proxied to audit-service
+      parameters: [{ name: proxy+, in: path, required: false, schema: { type: string } }]
+      responses: { '200': { description: Proxied response } }
+  /api/v1/notifications/{proxy+}:
+    get:
+      tags: [Gateway]
+      summary: Proxied to notification-service
+      parameters: [{ name: proxy+, in: path, required: false, schema: { type: string } }]
+      responses: { '200': { description: Proxied response } }
+  /graphql:
+    post:
+      tags: [Gateway]
+      summary: Proxied to graphql-service
+      responses: { '200': { description: Proxied response } }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
