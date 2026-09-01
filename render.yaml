@@ -1,0 +1,317 @@
+# Render Blueprint for ShipTrack.
+#
+# Render has no managed MySQL or MongoDB, so location-service/pricing-service (MySQL) and
+# tracking-service/crm-service/audit-service (MongoDB) need an external managed database -
+# e.g. PlanetScale/Aiven for MySQL, MongoDB Atlas for Mongo (both have free tiers). Fill in
+# their connection env vars (marked `sync: false` below) in the Render dashboard after the
+# blueprint deploys. PostgreSQL is natively supported and provisioned below.
+#
+# Deploy: push this repo to GitHub, then in Render: New -> Blueprint -> select the repo.
+
+databases:
+  - name: shiptrack-postgres
+    plan: free
+    databaseName: shiptrack
+    user: shiptrack
+
+services:
+  # ---------------------------------------------------------------------------------------
+  # Shared env var anchors are not supported by Render's YAML parser, so JWT_SECRET /
+  # JWT_REFRESH_SECRET are repeated per service below with `generateValue: true` on the
+  # *first* occurrence only - copy the generated value to the rest manually in the dashboard
+  # (they must all match, since auth-service signs tokens every other service verifies).
+  # ---------------------------------------------------------------------------------------
+
+  - type: web
+    name: shiptrack-auth-service
+    runtime: docker
+    dockerfilePath: services/auth-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8001
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        value: admin@shiptrack.local
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase: { name: shiptrack-postgres, property: connectionString }
+
+  - type: web
+    name: shiptrack-user-service
+    runtime: docker
+    dockerfilePath: services/user-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8002
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase: { name: shiptrack-postgres, property: connectionString }
+
+  - type: web
+    name: shiptrack-carrier-service
+    runtime: docker
+    dockerfilePath: services/carrier-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8003
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase: { name: shiptrack-postgres, property: connectionString }
+
+  - type: web
+    name: shiptrack-shipment-service
+    runtime: docker
+    dockerfilePath: services/shipment-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8004
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase: { name: shiptrack-postgres, property: connectionString }
+      - key: PRICING_SERVICE_URL
+        fromService: { name: shiptrack-pricing-service, type: web, property: hostport }
+      - key: TRACKING_SERVICE_URL
+        fromService: { name: shiptrack-tracking-service, type: web, property: hostport }
+
+  - type: web
+    name: shiptrack-tracking-service
+    runtime: docker
+    dockerfilePath: services/tracking-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8005
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: MONGO_URL
+        sync: false # MongoDB Atlas connection string
+
+  - type: web
+    name: shiptrack-pricing-service
+    runtime: docker
+    dockerfilePath: services/pricing-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8006
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_PORT
+        value: 3306
+      - key: MYSQL_USER
+        sync: false
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MYSQL_DATABASE
+        value: pricing_db
+      - key: LOCATION_SERVICE_URL
+        fromService: { name: shiptrack-location-service, type: web, property: hostport }
+
+  - type: web
+    name: shiptrack-location-service
+    runtime: docker
+    dockerfilePath: services/location-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8007
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_PORT
+        value: 3306
+      - key: MYSQL_USER
+        sync: false
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MYSQL_DATABASE
+        value: location_db
+
+  - type: web
+    name: shiptrack-crm-service
+    runtime: docker
+    dockerfilePath: services/crm-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8008
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: MONGO_URL
+        sync: false
+
+  - type: web
+    name: shiptrack-audit-service
+    runtime: docker
+    dockerfilePath: services/audit-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8009
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: MONGO_URL
+        sync: false
+
+  - type: web
+    name: shiptrack-notification-service
+    runtime: docker
+    dockerfilePath: services/notification-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8010
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        value: "ShipTrack <no-reply@shiptrack.local>"
+
+  - type: web
+    name: shiptrack-graphql-service
+    runtime: docker
+    dockerfilePath: services/graphql-service/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8011
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: SHIPMENT_SERVICE_URL
+        fromService: { name: shiptrack-shipment-service, type: web, property: hostport }
+      - key: TRACKING_SERVICE_URL
+        fromService: { name: shiptrack-tracking-service, type: web, property: hostport }
+      - key: USER_SERVICE_URL
+        fromService: { name: shiptrack-user-service, type: web, property: hostport }
+
+  - type: web
+    name: shiptrack-api-gateway
+    runtime: docker
+    dockerfilePath: services/api-gateway/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: AUTH_SERVICE_URL
+        fromService: { name: shiptrack-auth-service, type: web, property: hostport }
+      - key: USER_SERVICE_URL
+        fromService: { name: shiptrack-user-service, type: web, property: hostport }
+      - key: CARRIER_SERVICE_URL
+        fromService: { name: shiptrack-carrier-service, type: web, property: hostport }
+      - key: SHIPMENT_SERVICE_URL
+        fromService: { name: shiptrack-shipment-service, type: web, property: hostport }
+      - key: TRACKING_SERVICE_URL
+        fromService: { name: shiptrack-tracking-service, type: web, property: hostport }
+      - key: PRICING_SERVICE_URL
+        fromService: { name: shiptrack-pricing-service, type: web, property: hostport }
+      - key: LOCATION_SERVICE_URL
+        fromService: { name: shiptrack-location-service, type: web, property: hostport }
+      - key: CRM_SERVICE_URL
+        fromService: { name: shiptrack-crm-service, type: web, property: hostport }
+      - key: AUDIT_SERVICE_URL
+        fromService: { name: shiptrack-audit-service, type: web, property: hostport }
+      - key: NOTIFICATION_SERVICE_URL
+        fromService: { name: shiptrack-notification-service, type: web, property: hostport }
+      - key: GRAPHQL_SERVICE_URL
+        fromService: { name: shiptrack-graphql-service, type: web, property: hostport }
+
+  - type: web
+    name: shiptrack-frontend
+    runtime: docker
+    dockerfilePath: frontend/Dockerfile
+    dockerContext: frontend
+    plan: free
+    envVars: []
