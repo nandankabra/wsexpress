@@ -1,0 +1,23 @@
+{
+  "name": "location-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ShipTrack Location Service - countries, cities, warehouses, delivery routes; exposes a SOAP country-info endpoint",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@shiptrack/common": "*",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "mysql2": "^3.11.5",
+    "soap": "^1.1.9"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}

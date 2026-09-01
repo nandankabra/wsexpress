@@ -1,0 +1,119 @@
+openapi: 3.1.0
+info:
+  title: ShipTrack Location Service
+  version: "1.0.0"
+  description: >
+    Countries, cities, warehouses, and delivery routes (MySQL). Also exposes a SOAP
+    Country Information service (WSDL) at /wsdl/country?wsdl for legacy-style integration.
+servers:
+  - url: http://localhost:8007
+  - url: http://localhost:8000/api/v1/locations
+    description: Via API Gateway
+tags:
+  - name: Locations
+paths:
+  /api/v1/locations/countries:
+    get:
+      tags: [Locations]
+      summary: List countries (public)
+      responses:
+        '200': { description: Countries }
+    post:
+      tags: [Locations]
+      summary: Create a country (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/Country' } } }
+      responses:
+        '201': { description: Created }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/locations/countries/{code}:
+    get:
+      tags: [Locations]
+      summary: Get a country by ISO code (public)
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Country }
+        '304': { description: Not Modified (ETag match) }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/locations/cities:
+    get:
+      tags: [Locations]
+      summary: List cities, optionally filtered by countryCode (public)
+      parameters:
+        - name: countryCode
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: Cities }
+    post:
+      tags: [Locations]
+      summary: Create a city (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201': { description: Created }
+  /api/v1/locations/warehouses:
+    get:
+      tags: [Locations]
+      summary: List warehouses (public)
+      responses:
+        '200': { description: Warehouses }
+    post:
+      tags: [Locations]
+      summary: Create a warehouse (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201': { description: Created }
+  /api/v1/locations/routes:
+    get:
+      tags: [Locations]
+      summary: List delivery routes (public)
+      responses:
+        '200': { description: Routes }
+    post:
+      tags: [Locations]
+      summary: Create a delivery route (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '201': { description: Created }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/locations/routes/lookup:
+    get:
+      tags: [Locations]
+      summary: Look up transit days between two countries (public)
+      parameters:
+        - name: origin
+          in: query
+          required: true
+          schema: { type: string }
+        - name: destination
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Route }
+        '404': { $ref: '#/components/responses/NotFound' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    Country:
+      type: object
+      required: [code, name, capital, currency]
+      properties:
+        code: { type: string }
+        name: { type: string }
+        capital: { type: string }
+        currency: { type: string }
+    Error:
+      type: object
+      properties:
+        error: { type: object }
+  responses:
+    Conflict: { description: Already exists, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    NotFound: { description: Not found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
