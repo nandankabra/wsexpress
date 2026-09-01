@@ -1,0 +1,499 @@
+{
+  "info": {
+    "name": "ShipTrack API",
+    "description": "ShipTrack - Logistics & Shipment Tracking Platform. All requests go through the API Gateway ({{baseUrl}}, default http://localhost:8000). Run 'Auth > Register Customer' and 'Auth > Admin Login' first to populate {{accessToken}} and {{adminAccessToken}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "adminAccessToken", "value": "" },
+    { "key": "carrierAccessToken", "value": "" },
+    { "key": "shipmentId", "value": "" },
+    { "key": "trackingId", "value": "" },
+    { "key": "carrierUserId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Customer",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const data = pm.response.json();",
+            "pm.collectionVariables.set('accessToken', data.accessToken);",
+            "pm.collectionVariables.set('refreshToken', data.refreshToken);",
+            "pm.test('status 201', () => pm.response.to.have.status(201));"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Ada Lovelace\",\n  \"email\": \"ada+{{$randomInt}}@example.com\",\n  \"password\": \"S3cretPW!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const data = pm.response.json();",
+            "pm.collectionVariables.set('accessToken', data.accessToken);",
+            "pm.collectionVariables.set('refreshToken', data.refreshToken);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"ada@example.com\",\n  \"password\": \"S3cretPW!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Admin Login",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const data = pm.response.json();",
+            "pm.collectionVariables.set('adminAccessToken', data.accessToken);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@shiptrack.local\",\n  \"password\": \"Admin@12345\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const data = pm.response.json();",
+            "pm.collectionVariables.set('accessToken', data.accessToken);",
+            "pm.collectionVariables.set('refreshToken', data.refreshToken);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/refresh", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "refresh"] }
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "me"] }
+          }
+        },
+        {
+          "name": "Admin Create Carrier Account",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const data = pm.response.json();",
+            "pm.collectionVariables.set('carrierUserId', data.id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Swift Logistics\",\n  \"email\": \"ops+{{$randomInt}}@swift.example\",\n  \"password\": \"S3cretPW!\",\n  \"role\": \"CARRIER\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/admin/accounts", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "admin", "accounts"] }
+          }
+        },
+        {
+          "name": "Carrier Login",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const data = pm.response.json();",
+            "pm.collectionVariables.set('carrierAccessToken', data.accessToken);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"ops@swift.example\",\n  \"password\": \"S3cretPW!\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "v1", "auth", "logout"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customer Profile",
+      "item": [
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"fullName\": \"Ada Lovelace\",\n  \"email\": \"ada@example.com\",\n  \"city\": \"London\",\n  \"country\": \"GB\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/customers/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "me"] }
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/customers/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers", "me"] }
+          }
+        },
+        {
+          "name": "List Customers (admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/customers?limit=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "customers"], "query": [{ "key": "limit", "value": "20" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Carrier",
+      "item": [
+        {
+          "name": "Update My Carrier Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{carrierAccessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"companyName\": \"Swift Logistics\",\n  \"contactEmail\": \"ops@swift.example\",\n  \"vehicleType\": \"Van\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/carriers/me", "host": ["{{baseUrl}}"], "path": ["api", "v1", "carriers", "me"] }
+          }
+        },
+        {
+          "name": "List Carriers (admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/carriers?limit=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "carriers"], "query": [{ "key": "limit", "value": "20" }] }
+          }
+        },
+        {
+          "name": "Verify Carrier (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"isVerified\": true\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/carriers/{{carrierUserId}}/verify", "host": ["{{baseUrl}}"], "path": ["api", "v1", "carriers", "{{carrierUserId}}", "verify"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Shipments",
+      "item": [
+        {
+          "name": "Get Shipping Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"origin\": { \"address\": \"1 Main St\", \"city\": \"NYC\", \"country\": \"US\" },\n  \"destination\": { \"address\": \"2 Side St\", \"city\": \"LA\", \"country\": \"US\" },\n  \"weightKg\": 2.5,\n  \"packageType\": \"PARCEL\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/quotes", "host": ["{{baseUrl}}"], "path": ["api", "v1", "shipments", "quotes"] }
+          }
+        },
+        {
+          "name": "Create Shipment",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "const data = pm.response.json();",
+            "pm.collectionVariables.set('shipmentId', data.id);",
+            "pm.collectionVariables.set('trackingId', data.trackingId);",
+            "pm.test('status 201', () => pm.response.to.have.status(201));"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Idempotency-Key", "value": "{{$guid}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"origin\": { \"address\": \"1 Main St\", \"city\": \"NYC\", \"country\": \"US\" },\n  \"destination\": { \"address\": \"2 Side St\", \"city\": \"LA\", \"country\": \"US\" },\n  \"weightKg\": 2.5,\n  \"packageType\": \"PARCEL\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments", "host": ["{{baseUrl}}"], "path": ["api", "v1", "shipments"] }
+          }
+        },
+        {
+          "name": "List My Shipments",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments?limit=10", "host": ["{{baseUrl}}"], "path": ["api", "v1", "shipments"], "query": [{ "key": "limit", "value": "10" }] }
+          }
+        },
+        {
+          "name": "Get Shipment by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "shipments", "{{shipmentId}}"] }
+          }
+        },
+        {
+          "name": "Public Track Shipment (guest, no auth)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/track/{{trackingId}}", "host": ["{{baseUrl}}"], "path": ["api", "v1", "shipments", "track", "{{trackingId}}"] }
+          }
+        },
+        {
+          "name": "Update Status (carrier)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{carrierAccessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"PICKED_UP\",\n  \"expectedVersion\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "v1", "shipments", "{{shipmentId}}", "status"] }
+          }
+        },
+        {
+          "name": "Assign Carrier (admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"carrierId\": \"{{carrierUserId}}\",\n  \"expectedVersion\": 1\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}/assign-carrier", "host": ["{{baseUrl}}"], "path": ["api", "v1", "shipments", "{{shipmentId}}", "assign-carrier"] }
+          }
+        },
+        {
+          "name": "Update Delivery",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{carrierAccessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"deliveryNotes\": \"Left at front desk\",\n  \"expectedVersion\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/shipments/{{shipmentId}}/delivery", "host": ["{{baseUrl}}"], "path": ["api", "v1", "shipments", "{{shipmentId}}", "delivery"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tracking",
+      "item": [
+        {
+          "name": "List Tracking Events (public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/tracking/{{trackingId}}/events", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tracking", "{{trackingId}}", "events"] }
+          }
+        },
+        {
+          "name": "Add Tracking Event (carrier)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{carrierAccessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"IN_TRANSIT\",\n  \"location\": \"Denver, CO\",\n  \"note\": \"Departed regional hub\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/tracking/{{trackingId}}/events", "host": ["{{baseUrl}}"], "path": ["api", "v1", "tracking", "{{trackingId}}", "events"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pricing",
+      "item": [
+        {
+          "name": "Get Quote (direct)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"originCountry\": \"US\",\n  \"destinationCountry\": \"IN\",\n  \"weightKg\": 3,\n  \"packageType\": \"PARCEL\",\n  \"currency\": \"INR\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/pricing/quote", "host": ["{{baseUrl}}"], "path": ["api", "v1", "pricing", "quote"] }
+          }
+        },
+        {
+          "name": "Convert Currency",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 100,\n  \"fromCurrency\": \"USD\",\n  \"toCurrency\": \"INR\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/pricing/convert", "host": ["{{baseUrl}}"], "path": ["api", "v1", "pricing", "convert"] }
+          }
+        },
+        {
+          "name": "List Pricing Rules",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/pricing/rules", "host": ["{{baseUrl}}"], "path": ["api", "v1", "pricing", "rules"] }
+          }
+        },
+        {
+          "name": "Upsert Pricing Rule (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"packageType\": \"PARCEL\",\n  \"baseRate\": 5.5,\n  \"perKgRate\": 2.1,\n  \"internationalMultiplier\": 1.5\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/pricing/rules", "host": ["{{baseUrl}}"], "path": ["api", "v1", "pricing", "rules"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Location",
+      "item": [
+        {
+          "name": "List Countries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/locations/countries", "host": ["{{baseUrl}}"], "path": ["api", "v1", "locations", "countries"] }
+          }
+        },
+        {
+          "name": "Get Country",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/locations/countries/US", "host": ["{{baseUrl}}"], "path": ["api", "v1", "locations", "countries", "US"] }
+          }
+        },
+        {
+          "name": "List Warehouses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/locations/warehouses", "host": ["{{baseUrl}}"], "path": ["api", "v1", "locations", "warehouses"] }
+          }
+        },
+        {
+          "name": "Route Lookup",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/v1/locations/routes/lookup?origin=US&destination=CA", "host": ["{{baseUrl}}"], "path": ["api", "v1", "locations", "routes", "lookup"], "query": [{ "key": "origin", "value": "US" }, { "key": "destination", "value": "CA" }] }
+          }
+        },
+        {
+          "name": "Create Country (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"code\": \"MX\",\n  \"name\": \"Mexico\",\n  \"capital\": \"Mexico City\",\n  \"currency\": \"MXN\"\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/locations/countries", "host": ["{{baseUrl}}"], "path": ["api", "v1", "locations", "countries"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "CRM (admin analytics)",
+      "item": [
+        {
+          "name": "Analytics Summary",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/crm/summary", "host": ["{{baseUrl}}"], "path": ["api", "v1", "crm", "summary"] }
+          }
+        },
+        {
+          "name": "Top Customers",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/crm/customers/top", "host": ["{{baseUrl}}"], "path": ["api", "v1", "crm", "customers", "top"] }
+          }
+        },
+        {
+          "name": "Carrier Performance",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/crm/carriers/performance", "host": ["{{baseUrl}}"], "path": ["api", "v1", "crm", "carriers", "performance"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit (admin)",
+      "item": [
+        {
+          "name": "List Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/audit/logs?limit=20", "host": ["{{baseUrl}}"], "path": ["api", "v1", "audit", "logs"], "query": [{ "key": "limit", "value": "20" }] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Send Notification",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"to\": \"ada@example.com\",\n  \"type\": \"SHIPMENT_UPDATE\",\n  \"data\": { \"trackingId\": \"{{trackingId}}\", \"status\": \"IN_TRANSIT\" }\n}" },
+            "url": { "raw": "{{baseUrl}}/api/v1/notifications/send", "host": ["{{baseUrl}}"], "path": ["api", "v1", "notifications", "send"] }
+          }
+        },
+        {
+          "name": "List Notification History (admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminAccessToken}}" }],
+            "url": { "raw": "{{baseUrl}}/api/v1/notifications", "host": ["{{baseUrl}}"], "path": ["api", "v1", "notifications"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "GraphQL",
+      "item": [
+        {
+          "name": "trackShipment (public)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"query\": \"query($id: String!) { trackShipment(trackingId: $id) { status originCity destinationCity estimatedDeliveryDate } }\",\n  \"variables\": { \"id\": \"{{trackingId}}\" }\n}" },
+            "url": { "raw": "{{baseUrl}}/graphql", "host": ["{{baseUrl}}"], "path": ["graphql"] }
+          }
+        },
+        {
+          "name": "myDashboard (customer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"query\": \"query { myDashboard { profile { fullName email } recentShipments { trackingId status } } }\"\n}" },
+            "url": { "raw": "{{baseUrl}}/graphql", "host": ["{{baseUrl}}"], "path": ["graphql"] }
+          }
+        }
+      ]
+    }
+  ]
+}
