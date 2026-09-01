@@ -1,0 +1,223 @@
+openapi: 3.1.0
+info:
+  title: ShipTrack Shipment Service
+  version: "1.0.0"
+  description: Create/update shipments, shipping quotes, delivery info, and public tracking lookup.
+servers:
+  - url: http://localhost:8004
+  - url: http://localhost:8000/api/v1/shipments
+    description: Via API Gateway
+tags:
+  - name: Shipments
+paths:
+  /api/v1/shipments/quotes:
+    post:
+      tags: [Shipments]
+      summary: Get a shipping cost quote (customer)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/QuoteRequest' } } }
+      responses:
+        '200': { description: Quote, content: { application/json: { schema: { $ref: '#/components/schemas/Quote' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/v1/shipments:
+    post:
+      tags: [Shipments]
+      summary: Create a shipment (customer)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/QuoteRequest' } } }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Shipment' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+    get:
+      tags: [Shipments]
+      summary: List shipments (role-scoped, cursor-paginated) - shipment history
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: status
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: Page of shipments }
+  /api/v1/shipments/track/{trackingId}:
+    get:
+      tags: [Shipments]
+      summary: Public tracking lookup (guest, no auth required)
+      parameters:
+        - name: trackingId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Public tracking info, content: { application/json: { schema: { $ref: '#/components/schemas/PublicTracking' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/shipments/{id}:
+    get:
+      tags: [Shipments]
+      summary: Get a shipment by id (owner customer, assigned carrier, or admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Shipment, content: { application/json: { schema: { $ref: '#/components/schemas/Shipment' } } } }
+        '304': { description: Not Modified (ETag match) }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/shipments/{id}/status:
+    patch:
+      tags: [Shipments]
+      summary: Update shipment status (carrier/admin) with optimistic concurrency
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status, expectedVersion]
+              properties:
+                status: { type: string, enum: [PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, CANCELLED] }
+                expectedVersion: { type: integer }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Shipment' } } } }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+        '422': { $ref: '#/components/responses/Unprocessable' }
+  /api/v1/shipments/{id}/assign-carrier:
+    patch:
+      tags: [Shipments]
+      summary: Assign a carrier to a shipment (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [carrierId, expectedVersion]
+              properties:
+                carrierId: { type: string }
+                expectedVersion: { type: integer }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Shipment' } } } }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+  /api/v1/shipments/{id}/delivery:
+    patch:
+      tags: [Shipments]
+      summary: Update delivery details (carrier/admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedVersion]
+              properties:
+                actualDeliveryDate: { type: string, format: date }
+                deliveryNotes: { type: string }
+                expectedVersion: { type: integer }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Shipment' } } } }
+        '412': { $ref: '#/components/responses/PreconditionFailed' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      schema: { type: string }
+  schemas:
+    Address:
+      type: object
+      required: [address, city, country]
+      properties:
+        address: { type: string }
+        city: { type: string }
+        country: { type: string }
+    QuoteRequest:
+      type: object
+      required: [origin, destination, weightKg]
+      properties:
+        origin: { $ref: '#/components/schemas/Address' }
+        destination: { $ref: '#/components/schemas/Address' }
+        weightKg: { type: number }
+        packageType: { type: string, enum: [PARCEL, DOCUMENT, PALLET, FREIGHT] }
+        currency: { type: string }
+    Quote:
+      type: object
+      properties:
+        priceAmount: { type: number }
+        currency: { type: string }
+        estimatedDays: { type: integer }
+    Shipment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        trackingId: { type: string }
+        customerId: { type: string }
+        carrierId: { type: string, nullable: true }
+        origin: { $ref: '#/components/schemas/Address' }
+        destination: { $ref: '#/components/schemas/Address' }
+        weightKg: { type: number }
+        packageType: { type: string }
+        status: { type: string }
+        quotedPrice: { type: number }
+        currency: { type: string }
+        estimatedDeliveryDate: { type: string, format: date }
+        actualDeliveryDate: { type: string, format: date, nullable: true }
+        deliveryNotes: { type: string, nullable: true }
+        version: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    PublicTracking:
+      type: object
+      properties:
+        trackingId: { type: string }
+        status: { type: string }
+        originCity: { type: string }
+        originCountry: { type: string }
+        destinationCity: { type: string }
+        destinationCountry: { type: string }
+        estimatedDeliveryDate: { type: string, format: date }
+        actualDeliveryDate: { type: string, format: date, nullable: true }
+        updatedAt: { type: string, format: date-time }
+    Error:
+      type: object
+      properties:
+        error: { type: object }
+  responses:
+    BadRequest: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Forbidden: { description: Insufficient permissions, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    NotFound: { description: Not found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    PreconditionFailed: { description: Version conflict (optimistic concurrency), content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Unprocessable: { description: Invalid state transition, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
