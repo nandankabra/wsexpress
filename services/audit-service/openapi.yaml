@@ -1,0 +1,66 @@
+openapi: 3.1.0
+info:
+  title: ShipTrack Audit Service
+  version: "1.0.0"
+  description: Audit logs, security events, and API request logs (MongoDB).
+servers:
+  - url: http://localhost:8009
+  - url: http://localhost:8000/api/v1/audit
+    description: Via API Gateway
+tags:
+  - name: Audit
+paths:
+  /api/v1/audit/logs:
+    post:
+      tags: [Audit]
+      summary: Record an audit log entry (server-to-server)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/AuditLogRequest' } } }
+      responses:
+        '201': { description: Recorded }
+        '400': { $ref: '#/components/responses/BadRequest' }
+    get:
+      tags: [Audit]
+      summary: List audit logs (admin, cursor-paginated)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+        - name: severity
+          in: query
+          schema: { type: string, enum: [INFO, WARN, SECURITY] }
+        - name: actorId
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: Page of audit logs }
+        '403': { $ref: '#/components/responses/Forbidden' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    AuditLogRequest:
+      type: object
+      required: [action, service]
+      properties:
+        action: { type: string }
+        actorId: { type: string }
+        actorRole: { type: string }
+        service: { type: string }
+        method: { type: string }
+        path: { type: string }
+        statusCode: { type: integer }
+        severity: { type: string, enum: [INFO, WARN, SECURITY] }
+        metadata: { type: object }
+    Error:
+      type: object
+      properties:
+        error: { type: object }
+  responses:
+    BadRequest: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Forbidden: { description: Insufficient permissions, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
