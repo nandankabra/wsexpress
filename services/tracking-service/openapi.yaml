@@ -1,0 +1,84 @@
+openapi: 3.1.0
+info:
+  title: ShipTrack Tracking Service
+  version: "1.0.0"
+  description: Tracking events and shipment status history (MongoDB).
+servers:
+  - url: http://localhost:8005
+  - url: http://localhost:8000/api/v1/tracking
+    description: Via API Gateway
+tags:
+  - name: Tracking
+paths:
+  /api/v1/tracking/{trackingId}/events:
+    post:
+      tags: [Tracking]
+      summary: Record a tracking event (carrier/admin, or an internal service call)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: trackingId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/RecordEventRequest' } } }
+      responses:
+        '201': { description: Recorded, content: { application/json: { schema: { $ref: '#/components/schemas/TrackingEvent' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+    get:
+      tags: [Tracking]
+      summary: List tracking events for a tracking ID (public, cursor-paginated)
+      parameters:
+        - name: trackingId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        '200': { description: Page of tracking events }
+  /api/v1/tracking/{trackingId}/latest:
+    get:
+      tags: [Tracking]
+      summary: Get the most recent tracking event (public)
+      parameters:
+        - name: trackingId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Latest event, content: { application/json: { schema: { $ref: '#/components/schemas/TrackingEvent' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    RecordEventRequest:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [CREATED, PICKED_UP, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED, CANCELLED] }
+        location: { type: string }
+        note: { type: string }
+    TrackingEvent:
+      type: object
+      properties:
+        id: { type: string }
+        trackingId: { type: string }
+        status: { type: string }
+        location: { type: string, nullable: true }
+        note: { type: string, nullable: true }
+        recordedBy: { type: string, nullable: true }
+        timestamp: { type: string, format: date-time }
+    Error:
+      type: object
+      properties:
+        error: { type: object }
+  responses:
+    BadRequest: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    NotFound: { description: Not found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
