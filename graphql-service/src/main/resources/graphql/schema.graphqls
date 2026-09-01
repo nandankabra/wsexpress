@@ -1,0 +1,72 @@
+type Shipment {
+    id: ID!
+    trackingNumber: String!
+    senderName: String!
+    senderAddress: String!
+    receiverName: String!
+    receiverAddress: String!
+    originCountryCode: String!
+    destinationCountryCode: String!
+    weightKg: Float!
+    status: String!
+    createdAt: String
+}
+
+type TrackingEvent {
+    id: ID!
+    shipmentId: ID!
+    trackingNumber: String!
+    eventType: String!
+    location: String!
+    description: String
+    occurredAt: String
+}
+
+type Quote {
+    id: ID!
+    originCountryCode: String!
+    destinationCountryCode: String!
+    weightKg: Float!
+    carrierName: String!
+    amount: Float!
+    currency: String!
+}
+
+type CountryInfo {
+    code: String!
+    name: String!
+    currencyCode: String!
+    region: String!
+    capital: String!
+}
+
+type Query {
+    shipment(id: ID!): Shipment
+    shipments(page: Int = 0, size: Int = 20): [Shipment!]!
+    trackingEvents(shipmentId: ID!): [TrackingEvent!]!
+    countryInfo(code: String!): CountryInfo
+    quote(id: ID!): Quote
+}
+
+input CreateShipmentInput {
+    senderName: String!
+    senderAddress: String!
+    receiverName: String!
+    receiverAddress: String!
+    originCountryCode: String!
+    destinationCountryCode: String!
+    weightKg: Float!
+}
+
+input CreateTrackingEventInput {
+    shipmentId: ID!
+    trackingNumber: String!
+    eventType: String!
+    location: String!
+    description: String
+}
+
+type Mutation {
+    createShipment(input: CreateShipmentInput!): Shipment!
+    createTrackingEvent(input: CreateTrackingEventInput!): TrackingEvent!
+}

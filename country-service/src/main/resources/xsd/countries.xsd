@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:tns="http://shiptrack.dev/country-service/schemas"
+           targetNamespace="http://shiptrack.dev/country-service/schemas"
+           elementFormDefault="qualified">
+
+    <xs:element name="getCountryRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="countryCode" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="getCountryResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="country" type="tns:country"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="listCountriesRequest">
+        <xs:complexType/>
+    </xs:element>
+
+    <xs:element name="listCountriesResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="country" type="tns:country" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="countryNotFoundFault">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="countryCode" type="xs:string"/>
+                <xs:element name="message" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="country">
+        <xs:sequence>
+            <xs:element name="code" type="xs:string"/>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="currencyCode" type="xs:string"/>
+            <xs:element name="region" type="xs:string"/>
+            <xs:element name="capital" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+</xs:schema>
