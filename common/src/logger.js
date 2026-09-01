@@ -4,7 +4,7 @@ const pinoHttp = require('pino-http');
 function createLogger(serviceName) {
   return pino({
     name: serviceName,
-    level: process.env.LOG_LEVEL || 'info',
+    level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'test' ? 'silent' : 'info'),
     formatters: {
       level(label) {
         return { level: label };

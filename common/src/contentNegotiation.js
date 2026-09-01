@@ -2,7 +2,7 @@ const { parse: toXml } = require('js2xmlparser');
 
 /**
  * Honors Accept: application/xml by wrapping res.json to also serialize as XML.
- * Defaults to JSON when the Accept header is absent, */*, or application/json.
+ * Defaults to JSON when the Accept header is absent, a wildcard, or application/json.
  */
 function contentNegotiation(rootName = 'response') {
   return (req, res, next) => {
