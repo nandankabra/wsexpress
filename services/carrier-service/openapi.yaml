@@ -1,0 +1,110 @@
+openapi: 3.1.0
+info:
+  title: ShipTrack Carrier Service
+  version: "1.0.0"
+  description: Carrier account and profile management.
+servers:
+  - url: http://localhost:8003
+  - url: http://localhost:8000/api/v1/carriers
+    description: Via API Gateway
+tags:
+  - name: Carriers
+paths:
+  /api/v1/carriers/me:
+    get:
+      tags: [Carriers]
+      summary: Get the current carrier's profile
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Profile, content: { application/json: { schema: { $ref: '#/components/schemas/Carrier' } } } }
+        '304': { description: Not Modified (ETag match) }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Carriers]
+      summary: Create or update the current carrier's profile
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/UpsertCarrierRequest' } } }
+      responses:
+        '200': { description: Saved, content: { application/json: { schema: { $ref: '#/components/schemas/Carrier' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/v1/carriers:
+    get:
+      tags: [Carriers]
+      summary: List carriers (admin, cursor-paginated)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20, maximum: 100 }
+      responses:
+        '200': { description: Page of carriers }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/v1/carriers/{userId}:
+    get:
+      tags: [Carriers]
+      summary: Get a carrier by user id (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Carrier, content: { application/json: { schema: { $ref: '#/components/schemas/Carrier' } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/carriers/{userId}/verify:
+    patch:
+      tags: [Carriers]
+      summary: Verify or unverify a carrier (admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [isVerified], properties: { isVerified: { type: boolean } } } } }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Carrier' } } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    UpsertCarrierRequest:
+      type: object
+      required: [companyName, contactEmail]
+      properties:
+        companyName: { type: string }
+        contactEmail: { type: string, format: email }
+        contactPhone: { type: string }
+        vehicleType: { type: string }
+        licenseNumber: { type: string }
+        serviceAreas: { type: string }
+    Carrier:
+      allOf:
+        - $ref: '#/components/schemas/UpsertCarrierRequest'
+        - type: object
+          properties:
+            userId: { type: string, format: uuid }
+            isVerified: { type: boolean }
+            createdAt: { type: string, format: date-time }
+            updatedAt: { type: string, format: date-time }
+    Error:
+      type: object
+      properties:
+        error: { type: object }
+  responses:
+    BadRequest: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Unauthorized: { description: Missing or invalid token, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Forbidden: { description: Insufficient role permissions, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    NotFound: { description: Not found, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
