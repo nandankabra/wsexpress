@@ -9,8 +9,13 @@ FROM nginx:1.27-alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+
+# nginx's `listen 80;` is IPv4-only (unlike Node's dual-stack default bind used by every other
+# service here), and this container's /etc/hosts resolves "localhost" to ::1 first - so
+# wget-via-localhost hits connection-refused on IPv6 before ever trying IPv4. Target
+# 127.0.0.1 explicitly to sidestep that.
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=5 \
-  CMD wget -qO- http://localhost:80/ || exit 1
+  CMD wget -qO- http://127.0.0.1:80/ || exit 1
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

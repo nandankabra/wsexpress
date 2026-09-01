@@ -36,7 +36,9 @@ async function calculateQuote({ originCountry, destinationCountry, weightKg, pac
     const countryInfo = await countryClient.getCountryInfo(destinationCountry);
     if (countryInfo) destinationCurrency = countryInfo.currency;
   } catch (err) {
-    // location-service SOAP endpoint unavailable - degrade gracefully to USD pricing
+    // location-service SOAP endpoint unavailable - degrade gracefully to USD pricing, but
+    // still surface it: a silent catch here previously hid a real bug (stale WSDL endpoint).
+    console.error(`[pricing-service] SOAP GetCountryInfo(${destinationCountry}) failed:`, err.message);
   }
 
   const targetCurrency = (currency || destinationCurrency || 'USD').toUpperCase();

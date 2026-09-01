@@ -51,6 +51,21 @@ const validBody = {
 
 beforeEach(() => jest.clearAllMocks());
 
+describe('POST /api/v1/shipments/quotes', () => {
+  test('reshapes the nested origin/destination body into pricing-service\'s flat contract', async () => {
+    pricingClient.getQuote.mockResolvedValue({ priceAmount: 16.5, currency: 'USD', estimatedDays: 8 });
+    const res = await request(app)
+      .post('/api/v1/shipments/quotes')
+      .set('Authorization', `Bearer ${customerToken}`)
+      .send(validBody);
+    expect(res.status).toBe(200);
+    expect(pricingClient.getQuote).toHaveBeenCalledWith(
+      expect.objectContaining({ originCountry: 'US', destinationCountry: 'US', weightKg: 2.5 }),
+      expect.anything(),
+    );
+  });
+});
+
 describe('POST /api/v1/shipments', () => {
   test('rejects non-customer roles', async () => {
     const res = await request(app)

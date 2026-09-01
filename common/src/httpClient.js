@@ -23,7 +23,15 @@ function createServiceClient({ baseURL, name, timeout = DEFAULT_TIMEOUT_MS, fall
   });
 
   const breaker = new CircuitBreaker(
-    (config) => instance.request(config),
+    // Unwrap `.data` here, inside the action, so breaker.fire() always resolves to one
+    // consistent shape: the response body on success, or whatever a custom fallback
+    // returns on failure (e.g. `null`). Unwrapping after fire() instead (i.e. assuming
+    // the resolved value is always an Axios response) breaks the moment a fallback
+    // returns a plain value - `null.data` throws instead of degrading gracefully.
+    async (config) => {
+      const response = await instance.request(config);
+      return response.data;
+    },
     {
       timeout: timeout + 500,
       errorThresholdPercentage: 50,
@@ -44,8 +52,7 @@ function createServiceClient({ baseURL, name, timeout = DEFAULT_TIMEOUT_MS, fall
   async function request(config, correlationId) {
     const headers = { ...(config.headers || {}) };
     if (correlationId) headers['X-Correlation-Id'] = correlationId;
-    const response = await breaker.fire({ ...config, headers });
-    return response.data !== undefined ? response.data : response;
+    return breaker.fire({ ...config, headers });
   }
 
   return {

@@ -53,22 +53,23 @@ function toPublicTrackingResponse(row) {
   };
 }
 
+function toPricingQuoteRequest(body) {
+  return {
+    originCountry: body.origin.country,
+    destinationCountry: body.destination.country,
+    weightKg: body.weightKg,
+    packageType: body.packageType || 'PARCEL',
+    currency: body.currency,
+  };
+}
+
 async function getQuote(body, correlationId) {
-  const quote = await pricingClient.getQuote(body, correlationId);
+  const quote = await pricingClient.getQuote(toPricingQuoteRequest(body), correlationId);
   return quote;
 }
 
 async function createShipment(customerId, body, correlationId) {
-  const quote = await pricingClient.getQuote(
-    {
-      originCountry: body.origin.country,
-      destinationCountry: body.destination.country,
-      weightKg: body.weightKg,
-      packageType: body.packageType || 'PARCEL',
-      currency: body.currency,
-    },
-    correlationId,
-  );
+  const quote = await pricingClient.getQuote(toPricingQuoteRequest(body), correlationId);
 
   const estimatedDeliveryDate = new Date(Date.now() + (quote.estimatedDays || 5) * 86_400_000)
     .toISOString()

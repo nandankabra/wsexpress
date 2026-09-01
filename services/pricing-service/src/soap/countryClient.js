@@ -10,10 +10,21 @@ let clientPromise = null;
 function getClient() {
   if (!clientPromise) {
     const wsdlUrl = `${process.env.LOCATION_SERVICE_URL}/wsdl/country?wsdl`;
-    clientPromise = soap.createClientAsync(wsdlUrl).catch((err) => {
-      clientPromise = null;
-      throw err;
-    });
+    clientPromise = soap.createClientAsync(wsdlUrl)
+      .then((client) => {
+        // The WSDL's <soap:address> is a static "http://localhost:8007/..." (baked in at
+        // author time - it can't know its own externally-reachable host/port). node-soap uses
+        // that address as the actual endpoint for operation calls, not just the URL the WSDL
+        // was fetched from, so without this override every real call resolves "localhost"
+        // against the *caller's* container instead of location-service and fails with
+        // ECONNREFUSED. Point it at the same base URL used to fetch the WSDL.
+        client.setEndpoint(`${process.env.LOCATION_SERVICE_URL}/wsdl/country`);
+        return client;
+      })
+      .catch((err) => {
+        clientPromise = null;
+        throw err;
+      });
   }
   return clientPromise;
 }
