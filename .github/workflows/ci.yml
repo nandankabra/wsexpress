@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies (all workspaces)
+        run: npm ci
+
+      - name: Run test suites (all workspaces)
+        run: npm test --workspaces --if-present
+
+      - name: Build frontend
+        run: npm run build --workspace=frontend
+
+      - name: Audit for known vulnerabilities
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+  docker-build:
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      matrix:
+        service:
+          - api-gateway
+          - auth-service
+          - user-service
+          - carrier-service
+          - shipment-service
+          - tracking-service
+          - pricing-service
+          - location-service
+          - crm-service
+          - audit-service
+          - notification-service
+          - graphql-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ${{ matrix.service }} image
+        run: docker build -f services/${{ matrix.service }}/Dockerfile -t shiptrack/${{ matrix.service }}:ci .
+
+  docker-build-frontend:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build frontend image
+        run: docker build -f frontend/Dockerfile -t shiptrack/frontend:ci ./frontend
