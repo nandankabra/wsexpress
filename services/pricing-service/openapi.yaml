@@ -1,0 +1,94 @@
+openapi: 3.1.0
+info:
+  title: ShipTrack Pricing Service
+  version: "1.0.0"
+  description: >
+    Shipping cost calculation and pricing rules (MySQL). Also exposes a SOAP Currency
+    Conversion service (WSDL) at /wsdl/currency?wsdl, and internally acts as a SOAP
+    client against location-service's Country Information service when pricing quotes.
+servers:
+  - url: http://localhost:8006
+  - url: http://localhost:8000/api/v1/pricing
+    description: Via API Gateway
+tags:
+  - name: Pricing
+paths:
+  /api/v1/pricing/quote:
+    post:
+      tags: [Pricing]
+      summary: Calculate a shipping quote
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/QuoteRequest' } } }
+      responses:
+        '200': { description: Quote, content: { application/json: { schema: { $ref: '#/components/schemas/Quote' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/v1/pricing/convert:
+    post:
+      tags: [Pricing]
+      summary: Convert an amount between currencies
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, fromCurrency, toCurrency]
+              properties:
+                amount: { type: number }
+                fromCurrency: { type: string }
+                toCurrency: { type: string }
+      responses:
+        '200': { description: Converted amount }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /api/v1/pricing/rules:
+    get:
+      tags: [Pricing]
+      summary: List pricing rules (public)
+      responses:
+        '200': { description: Rules }
+    put:
+      tags: [Pricing]
+      summary: Create or update a pricing rule (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [packageType, baseRate, perKgRate]
+              properties:
+                packageType: { type: string }
+                baseRate: { type: number }
+                perKgRate: { type: number }
+                internationalMultiplier: { type: number }
+      responses:
+        '200': { description: Saved }
+        '403': { $ref: '#/components/responses/Forbidden' }
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    QuoteRequest:
+      type: object
+      required: [originCountry, destinationCountry, weightKg]
+      properties:
+        originCountry: { type: string }
+        destinationCountry: { type: string }
+        weightKg: { type: number }
+        packageType: { type: string, enum: [PARCEL, DOCUMENT, PALLET, FREIGHT] }
+        currency: { type: string }
+    Quote:
+      type: object
+      properties:
+        priceAmount: { type: number }
+        currency: { type: string }
+        estimatedDays: { type: integer }
+    Error:
+      type: object
+      properties:
+        error: { type: object }
+  responses:
+    BadRequest: { description: Validation failed, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+    Forbidden: { description: Insufficient permissions, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
