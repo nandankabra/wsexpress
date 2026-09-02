@@ -53,7 +53,9 @@ WSDL-first) · Swagger UI / hand-written OpenAPI 3.1 · Docker + Docker Compose 
 | graphql-service | 8011 | - | Aggregated shipment/tracking/customer-dashboard queries |
 
 Full diagrams (service topology, request lifecycle, ER diagrams for all three databases) are in
-[docs/architecture.md](docs/architecture.md) and [docs/er-diagrams.md](docs/er-diagrams.md).
+[docs/architecture.md](docs/architecture.md) and [docs/er-diagrams.md](docs/er-diagrams.md) as
+Mermaid; editable draw.io versions (use case, ER, and full physical schema diagrams, each with a
+PNG export) are in [docs/diagrams/](docs/diagrams/).
 
 ## Roles
 
