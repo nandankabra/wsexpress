@@ -57,9 +57,9 @@ services:
       - key: PORT
         value: 8001
       - key: CRM_SERVICE_URL
-        fromService: { name: shiptrack-crm-service, type: web, property: hostport }
+        value: https://shiptrack-crm-service.onrender.com
       - key: NOTIFICATION_SERVICE_URL
-        fromService: { name: shiptrack-notification-service, type: web, property: hostport }
+        value: https://shiptrack-notification-service.onrender.com
 
   - type: web
     name: shiptrack-user-service
@@ -85,7 +85,7 @@ services:
       - key: PORT
         value: 8003
       - key: CRM_SERVICE_URL
-        fromService: { name: shiptrack-crm-service, type: web, property: hostport }
+        value: https://shiptrack-crm-service.onrender.com
 
   - type: web
     name: shiptrack-shipment-service
@@ -99,11 +99,11 @@ services:
       - key: PORT
         value: 8004
       - key: PRICING_SERVICE_URL
-        fromService: { name: shiptrack-pricing-service, type: web, property: hostport }
+        value: https://shiptrack-pricing-service.onrender.com
       - key: TRACKING_SERVICE_URL
-        fromService: { name: shiptrack-tracking-service, type: web, property: hostport }
+        value: https://shiptrack-tracking-service.onrender.com
       - key: CRM_SERVICE_URL
-        fromService: { name: shiptrack-crm-service, type: web, property: hostport }
+        value: https://shiptrack-crm-service.onrender.com
 
   - type: web
     name: shiptrack-pricing-service
@@ -117,7 +117,7 @@ services:
       - key: PORT
         value: 8006
       - key: LOCATION_SERVICE_URL
-        fromService: { name: shiptrack-location-service, type: web, property: hostport }
+        value: https://shiptrack-location-service.onrender.com
 
   - type: web
     name: shiptrack-location-service
@@ -191,11 +191,11 @@ services:
       - key: PORT
         value: 8011
       - key: SHIPMENT_SERVICE_URL
-        fromService: { name: shiptrack-shipment-service, type: web, property: hostport }
+        value: https://shiptrack-shipment-service.onrender.com
       - key: TRACKING_SERVICE_URL
-        fromService: { name: shiptrack-tracking-service, type: web, property: hostport }
+        value: https://shiptrack-tracking-service.onrender.com
       - key: USER_SERVICE_URL
-        fromService: { name: shiptrack-user-service, type: web, property: hostport }
+        value: https://shiptrack-user-service.onrender.com
 
   - type: web
     name: shiptrack-api-gateway
@@ -209,27 +209,27 @@ services:
       - key: PORT
         value: 8000
       - key: AUTH_SERVICE_URL
-        fromService: { name: shiptrack-auth-service, type: web, property: hostport }
+        value: https://shiptrack-auth-service.onrender.com
       - key: USER_SERVICE_URL
-        fromService: { name: shiptrack-user-service, type: web, property: hostport }
+        value: https://shiptrack-user-service.onrender.com
       - key: CARRIER_SERVICE_URL
-        fromService: { name: shiptrack-carrier-service, type: web, property: hostport }
+        value: https://shiptrack-carrier-service.onrender.com
       - key: SHIPMENT_SERVICE_URL
-        fromService: { name: shiptrack-shipment-service, type: web, property: hostport }
+        value: https://shiptrack-shipment-service.onrender.com
       - key: TRACKING_SERVICE_URL
-        fromService: { name: shiptrack-tracking-service, type: web, property: hostport }
+        value: https://shiptrack-tracking-service.onrender.com
       - key: PRICING_SERVICE_URL
-        fromService: { name: shiptrack-pricing-service, type: web, property: hostport }
+        value: https://shiptrack-pricing-service.onrender.com
       - key: LOCATION_SERVICE_URL
-        fromService: { name: shiptrack-location-service, type: web, property: hostport }
+        value: https://shiptrack-location-service.onrender.com
       - key: CRM_SERVICE_URL
-        fromService: { name: shiptrack-crm-service, type: web, property: hostport }
+        value: https://shiptrack-crm-service.onrender.com
       - key: AUDIT_SERVICE_URL
-        fromService: { name: shiptrack-audit-service, type: web, property: hostport }
+        value: https://shiptrack-audit-service.onrender.com
       - key: NOTIFICATION_SERVICE_URL
-        fromService: { name: shiptrack-notification-service, type: web, property: hostport }
+        value: https://shiptrack-notification-service.onrender.com
       - key: GRAPHQL_SERVICE_URL
-        fromService: { name: shiptrack-graphql-service, type: web, property: hostport }
+        value: https://shiptrack-graphql-service.onrender.com
 
   - type: web
     name: shiptrack-frontend
