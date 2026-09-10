@@ -19,7 +19,7 @@ const { buildRouteTable } = require('./proxy/routes');
 const SERVICE_NAME = 'api-gateway';
 
 function buildApp() {
-  assertProductionConfig();
+  assertProductionConfig({ requireCors: true });
   const app = express();
   const logger = createLogger(SERVICE_NAME);
   const allowedOrigins = (process.env.CORS_ORIGIN || '*')

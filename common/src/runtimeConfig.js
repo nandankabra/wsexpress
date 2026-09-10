@@ -1,6 +1,6 @@
 const DEMO_SECRET_MARKERS = ['change-me', 'dev-access', 'dev-refresh'];
 
-function assertProductionConfig({ requireAdmin = false, requireSmtp = false } = {}) {
+function assertProductionConfig({ requireAdmin = false, requireSmtp = false, requireCors = false } = {}) {
   if (process.env.NODE_ENV !== 'production') return;
 
   const errors = [];
@@ -11,9 +11,11 @@ function assertProductionConfig({ requireAdmin = false, requireSmtp = false } = 
     }
   }
 
-  const origins = process.env.CORS_ORIGIN || '';
-  if (!origins || origins.split(',').some((origin) => origin.trim() === '*')) {
-    errors.push('CORS_ORIGIN must list explicit production frontend origins');
+  if (requireCors) {
+    const origins = process.env.CORS_ORIGIN || '';
+    if (!origins || origins.split(',').some((origin) => origin.trim() === '*')) {
+      errors.push('CORS_ORIGIN must list explicit production frontend origins');
+    }
   }
 
   if (requireAdmin && (!process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD.length < 12)) {

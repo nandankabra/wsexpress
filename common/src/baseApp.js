@@ -13,7 +13,7 @@ const { assertProductionConfig } = require('./runtimeConfig');
  * per-router by each service since they don't apply uniformly to every endpoint.
  */
 function createBaseApp(serviceName) {
-  assertProductionConfig();
+  assertProductionConfig({ requireCors: serviceName === 'api-gateway' });
   const app = express();
   const logger = createLogger(serviceName);
   const allowedOrigins = (process.env.CORS_ORIGIN || '*')

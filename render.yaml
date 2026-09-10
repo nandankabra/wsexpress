@@ -14,13 +14,15 @@ envVarGroups:
       - key: NODE_ENV
         value: production
       - key: JWT_SECRET
-        generateValue: true
+        value: aa4a3aba459a0083841d87b83f6c36e414cd3f4915d7276eae3ecef2f77f29f6
       - key: JWT_REFRESH_SECRET
-        generateValue: true
+        value: 17a01e132381ea1341aeff92660cfe1ad4d11cf9c01fd000e2c5efb90c6f4646
       - key: ACCESS_TOKEN_TTL
         value: 15m
       - key: REFRESH_TOKEN_TTL
         value: 7d
+      - key: CORS_ORIGIN
+        value: "https://shiptrack-frontend.onrender.com,http://localhost:3001"
       - key: DATABASE_URL
         sync: false # Paste your Neon PostgreSQL URL
       - key: MYSQL_URL
@@ -206,8 +208,6 @@ services:
       - fromGroup: shiptrack-cloud-env
       - key: PORT
         value: 8000
-      - key: CORS_ORIGIN
-        sync: false # Set to frontend URL (e.g. https://shiptrack-frontend.onrender.com)
       - key: AUTH_SERVICE_URL
         fromService: { name: shiptrack-auth-service, type: web, property: hostport }
       - key: USER_SERVICE_URL
