@@ -1,6 +1,7 @@
 const express = require('express');
 const { validate, optionalAuthenticate, cacheControl } = require('@shiptrack/common');
 const controller = require('../controllers/trackingController');
+const labelController = require('../controllers/labelController');
 const { recordEventSchema } = require('../middleware/schemas');
 
 const router = express.Router();
@@ -14,5 +15,12 @@ router.post('/:trackingId/events', optionalAuthenticate, validate(recordEventSch
 // tracking pages - this is the "Guest: Search Public Tracking IDs" capability.
 router.get('/:trackingId/events', cacheControl(10), controller.listEvents);
 router.get('/:trackingId/latest', cacheControl(10), controller.latest);
+
+// Download printable PDF label
+router.get('/:trackingId/label', labelController.generateLabel);
+
+// Server-Sent Events (SSE) stream for real-time updates
+const { streamEvents } = require('../controllers/streamController');
+router.get('/stream/:trackingId', streamEvents);
 
 module.exports = router;

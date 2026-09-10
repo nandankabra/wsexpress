@@ -1,17 +1,50 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { trackPublic } from '../../api/shipments';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { Search, MapPin, Package, CheckCircle2, Clock, Truck, ArrowRight } from 'lucide-react';
+import { Search, MapPin, Package, CheckCircle2, Clock, Truck, ArrowRight, Printer } from 'lucide-react';
 import { toast } from 'sonner';
+
+import TrackingMap from '../../components/TrackingMap';
 
 export default function TrackPage() {
   const [trackingId, setTrackingId] = useState('');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!data?.trackingId) return;
+
+    const source = new EventSource(`/api/v1/tracking/stream/${data.trackingId}`);
+
+    source.onmessage = (event) => {
+      try {
+        const newEvent = JSON.parse(event.data);
+        
+        setData((prevData) => {
+          if (!prevData) return prevData;
+          
+          const exists = prevData.events?.some(e => e.id === newEvent.id);
+          if (exists) return prevData;
+
+          toast.info(`Shipment updated: ${newEvent.status.replace(/_/g, ' ')}`);
+
+          return {
+            ...prevData,
+            status: newEvent.status,
+            events: [newEvent, ...(prevData.events || [])]
+          };
+        });
+      } catch (err) {
+        console.error("SSE parse error", err);
+      }
+    };
+
+    return () => source.close();
+  }, [data?.trackingId]);
 
   async function handleSearch(e) {
     e.preventDefault();
@@ -29,6 +62,12 @@ export default function TrackPage() {
       setLoading(false);
     }
   }
+
+  const handleDownloadLabel = () => {
+    if (!data?.trackingId) return;
+    const url = `/api/v1/tracking/${data.trackingId}/label`;
+    window.open(url, '_blank');
+  };
 
   const getStatusColor = (status) => {
     if (status === 'DELIVERED') return 'success';
@@ -100,9 +139,15 @@ export default function TrackPage() {
                       </p>
                     )}
                   </div>
-                  <Badge variant={getStatusColor(data.status)} className="text-xs px-3 py-1 self-start sm:self-auto">
-                    {data.status?.replace(/_/g, ' ') || 'UNKNOWN'}
-                  </Badge>
+                  <div className="flex items-center gap-3 self-start sm:self-auto">
+                    <Button variant="outline" size="sm" onClick={handleDownloadLabel} className="text-xs h-8">
+                      <Printer className="mr-1.5 h-3.5 w-3.5" />
+                      Print Label
+                    </Button>
+                    <Badge variant={getStatusColor(data.status)} className="text-xs px-3 py-1">
+                      {data.status?.replace(/_/g, ' ') || 'UNKNOWN'}
+                    </Badge>
+                  </div>
                 </div>
 
                 <div className="mt-8 flex justify-between items-center px-4 relative">
@@ -143,6 +188,7 @@ export default function TrackPage() {
 
                 {data.events && data.events.length > 0 && (
                   <div className="mt-10 pt-6 border-t border-zinc-100">
+                    <TrackingMap events={data.events} />
                     <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500 mb-4 flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5" />
                       Recorded Transit Milestones

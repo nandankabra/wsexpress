@@ -1,0 +1,62 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy for Frontend
+        if: env.RENDER_DEPLOY_HOOK_FRONTEND != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_FRONTEND }}
+
+      - name: Trigger Render Deploy for API Gateway
+        if: env.RENDER_DEPLOY_HOOK_API_GATEWAY != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_API_GATEWAY }}
+
+      - name: Trigger Render Deploy for Tracking Service
+        if: env.RENDER_DEPLOY_HOOK_TRACKING != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_TRACKING }}
+
+      - name: Trigger Render Deploy for Pricing Service
+        if: env.RENDER_DEPLOY_HOOK_PRICING != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_PRICING }}
+
+      - name: Trigger Render Deploy for CRM Service
+        if: env.RENDER_DEPLOY_HOOK_CRM != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_CRM }}
+
+      - name: Trigger Render Deploy for Audit Service
+        if: env.RENDER_DEPLOY_HOOK_AUDIT != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_AUDIT }}
+
+      - name: Trigger Render Deploy for Auth Service
+        if: env.RENDER_DEPLOY_HOOK_AUTH != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_AUTH }}
+
+      - name: Trigger Render Deploy for Carrier Service
+        if: env.RENDER_DEPLOY_HOOK_CARRIER != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_CARRIER }}
+
+      - name: Trigger Render Deploy for Location Service
+        if: env.RENDER_DEPLOY_HOOK_LOCATION != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_LOCATION }}
+
+      - name: Trigger Render Deploy for Notification Service
+        if: env.RENDER_DEPLOY_HOOK_NOTIFICATION != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_NOTIFICATION }}
+
+      - name: Trigger Render Deploy for User Service
+        if: env.RENDER_DEPLOY_HOOK_USER != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_USER }}
+
+      - name: Trigger Render Deploy for GraphQL Service
+        if: env.RENDER_DEPLOY_HOOK_GRAPHQL != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_GRAPHQL }}
+
+      - name: Trigger Render Deploy for Shipment Service
+        if: env.RENDER_DEPLOY_HOOK_SHIPMENT != ''
+        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK_SHIPMENT }}

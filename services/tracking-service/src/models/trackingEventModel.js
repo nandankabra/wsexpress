@@ -8,6 +8,8 @@ const trackingEventSchema = new mongoose.Schema({
     enum: ['CREATED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'],
   },
   location: { type: String },
+  lat: { type: Number },
+  lng: { type: Number },
   note: { type: String },
   recordedBy: { type: String },
   timestamp: { type: Date, default: Date.now },
@@ -15,8 +17,8 @@ const trackingEventSchema = new mongoose.Schema({
 
 const TrackingEvent = mongoose.model('TrackingEvent', trackingEventSchema);
 
-async function create({ trackingId, status, location, note, recordedBy }) {
-  const doc = await TrackingEvent.create({ trackingId, status, location, note, recordedBy });
+async function create({ trackingId, status, location, lat, lng, note, recordedBy }) {
+  const doc = await TrackingEvent.create({ trackingId, status, location, lat, lng, note, recordedBy });
   return doc.toObject();
 }
 

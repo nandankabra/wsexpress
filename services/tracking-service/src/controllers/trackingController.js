@@ -1,4 +1,5 @@
 const trackingEventService = require('../services/trackingEventService');
+const { broadcastEvent } = require('./streamController');
 
 async function recordEvent(req, res, next) {
   try {
@@ -7,9 +8,15 @@ async function recordEvent(req, res, next) {
       trackingId: req.params.trackingId,
       status: req.body.status,
       location: req.body.location,
+      lat: req.body.lat,
+      lng: req.body.lng,
       note: req.body.note,
       recordedBy,
     });
+    
+    // Broadcast event to active SSE clients
+    broadcastEvent(event);
+    
     res.status(201).json(event);
   } catch (err) {
     next(err);

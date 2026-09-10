@@ -8,6 +8,8 @@ const recordEventSchema = {
       enum: ['CREATED', 'PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'],
     },
     location: { type: 'string', maxLength: 120 },
+    lat: { type: 'number' },
+    lng: { type: 'number' },
     note: { type: 'string', maxLength: 300 },
   },
 };

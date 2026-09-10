@@ -7,14 +7,16 @@ function toResponse(doc) {
     trackingId: doc.trackingId,
     status: doc.status,
     location: doc.location || null,
+    lat: doc.lat || null,
+    lng: doc.lng || null,
     note: doc.note || null,
     recordedBy: doc.recordedBy || null,
     timestamp: doc.timestamp,
   };
 }
 
-async function recordEvent({ trackingId, status, location, note, recordedBy }) {
-  const doc = await trackingEventModel.create({ trackingId, status, location, note, recordedBy });
+async function recordEvent({ trackingId, status, location, lat, lng, note, recordedBy }) {
+  const doc = await trackingEventModel.create({ trackingId, status, location, lat, lng, note, recordedBy });
   return toResponse(doc);
 }
 
