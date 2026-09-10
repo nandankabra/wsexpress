@@ -45,9 +45,32 @@ async function issueTokens(user) {
 
 async function register({ name, email, password }, correlationId) {
   const existing = await userModel.findByEmail(email);
+  
   if (existing) {
-    throw ApiError.conflict('An account with this email already exists');
+    if (existing.is_verified) {
+      throw ApiError.conflict('An account with this email already exists');
+    }
+    
+    // User exists but is unverified. Treat this as a fresh registration attempt.
+    const passwordHash = await hashPassword(password);
+    await userModel.updatePassword(existing.id, passwordHash);
+    
+    // Revoke old tokens and issue a new one
+    await verificationTokenModel.revokeTokens(existing.id, 'EMAIL_VERIFICATION');
+    const { otp, hash } = generateOTP();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await verificationTokenModel.createToken(existing.id, hash, 'EMAIL_VERIFICATION', expiresAt);
+
+    // Resend email
+    await notificationClient.sendNotification({
+      to: email,
+      type: 'EMAIL_VERIFICATION',
+      data: { name: existing.name || name, otp }
+    }, correlationId);
+
+    return { user: toUserResponse(existing) };
   }
+
   const passwordHash = await hashPassword(password);
   // Create user as unverified
   const user = await userModel.create({ name, email, passwordHash, role: 'CUSTOMER', isVerified: false });
