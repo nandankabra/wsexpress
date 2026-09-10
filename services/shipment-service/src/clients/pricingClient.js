@@ -5,10 +5,10 @@ const pricingClient = createServiceClient({
   name: 'pricing-service',
 });
 
-function getQuote({ originCountry, destinationCountry, weightKg, packageType, currency }, correlationId) {
+function getQuote(data, correlationId) {
   return pricingClient.post(
     '/api/v1/pricing/quote',
-    { originCountry, destinationCountry, weightKg, packageType, currency },
+    data,
     correlationId,
   );
 }
