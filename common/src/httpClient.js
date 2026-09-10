@@ -2,6 +2,7 @@ const axios = require('axios');
 const axiosRetry = require('axios-retry').default || require('axios-retry');
 const CircuitBreaker = require('opossum');
 const { ApiError } = require('./errors');
+const { normalizeServiceUrl } = require('./normalizeUrl');
 
 const DEFAULT_TIMEOUT_MS = Number(process.env.OUTBOUND_TIMEOUT_MS) || 3000;
 const DEFAULT_RETRIES = Number(process.env.OUTBOUND_RETRIES) || 3;
@@ -12,7 +13,7 @@ const DEFAULT_RETRIES = Number(process.env.OUTBOUND_RETRIES) || 3;
  * after repeated failures and short-circuits with 503 until it recovers.
  */
 function createServiceClient({ baseURL, name, timeout = DEFAULT_TIMEOUT_MS, fallback } = {}) {
-  const normalizedBaseURL = baseURL && !/^https?:\/\//i.test(baseURL) ? `http://${baseURL}` : baseURL;
+  const normalizedBaseURL = normalizeServiceUrl(baseURL);
   const instance = axios.create({ baseURL: normalizedBaseURL, timeout });
 
   axiosRetry(instance, {

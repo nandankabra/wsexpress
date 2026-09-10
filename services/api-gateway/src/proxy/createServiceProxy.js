@@ -1,4 +1,5 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const { normalizeServiceUrl } = require('@shiptrack/common');
 
 const TIMEOUT_MS = Number(process.env.PROXY_TIMEOUT_MS) || 5000;
 
@@ -13,7 +14,7 @@ const TIMEOUT_MS = Number(process.env.PROXY_TIMEOUT_MS) || 5000;
  * be restored.
  */
 function createServiceProxy(target, serviceName, mountPath) {
-  const normalizedTarget = target && !/^https?:\/\//i.test(target) ? `http://${target}` : target;
+  const normalizedTarget = normalizeServiceUrl(target);
   return createProxyMiddleware({
     target: normalizedTarget,
     changeOrigin: true,

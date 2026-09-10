@@ -239,4 +239,4 @@ services:
     plan: free
     envVars:
       - key: API_GATEWAY_URL
-        sync: false # Set to https://shiptrack-api-gateway.onrender.com
+        value: https://shiptrack-api-gateway.onrender.com

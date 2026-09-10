@@ -14,6 +14,7 @@ const { createServiceClient } = require('./httpClient');
 const { swaggerDocs } = require('./swaggerDocs');
 const { createBaseApp } = require('./baseApp');
 const { assertProductionConfig } = require('./runtimeConfig');
+const { normalizeServiceUrl } = require('./normalizeUrl');
 
 module.exports = {
   ApiError,
@@ -40,4 +41,5 @@ module.exports = {
   swaggerDocs,
   createBaseApp,
   assertProductionConfig,
+  normalizeServiceUrl,
 };
