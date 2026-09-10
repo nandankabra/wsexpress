@@ -1,7 +1,7 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const { normalizeServiceUrl } = require('@shiptrack/common');
 
-const TIMEOUT_MS = Number(process.env.PROXY_TIMEOUT_MS) || 5000;
+const TIMEOUT_MS = Number(process.env.PROXY_TIMEOUT_MS) || 20000;
 
 /**
  * Wraps http-proxy-middleware with correlation-id propagation and a JSON error response

@@ -1,21 +1,31 @@
 const nodemailer = require('nodemailer');
+const notificationClient = require('../clients/notificationClient');
 
 let transporter = null;
 
 function getTransporter() {
   if (transporter) return transporter;
 
+  const port = Number(process.env.SMTP_PORT) || 587;
+  const isSecure = port === 465;
+
   if (process.env.SMTP_HOST) {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: false,
+      port: port,
+      secure: isSecure,
       auth: process.env.SMTP_USER
         ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD }
         : undefined,
+      connectionTimeout: 6000,
+      greetingTimeout: 6000,
+      socketTimeout: 6000,
+      family: 4, // Force IPv4 to prevent hanging on cloud containers without IPv6 routes
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
   } else {
-    // Fallback: log to console when no SMTP configured
     transporter = nodemailer.createTransport({ jsonTransport: true });
   }
   return transporter;
@@ -43,15 +53,25 @@ async function sendVerificationEmail(to, name, otp) {
       `,
     });
 
-    if (!process.env.SMTP_HOST) {
-      console.log(`[auth-mailer] SIMULATED verification email to ${to}, OTP: ${otp}`);
-    } else {
-      console.log(`[auth-mailer] Verification email sent to ${to}, messageId: ${info.messageId}`);
-    }
+    console.log(`[auth-mailer] Direct verification email sent to ${to}, messageId: ${info.messageId}`);
     return info;
   } catch (err) {
-    console.error(`[auth-mailer] Failed to send verification email to ${to}:`, err.message);
-    throw err;
+    console.error(`[auth-mailer] Direct SMTP send failed for ${to}: ${err.message}. Trying notification-service fallback...`);
+    
+    // Resilient fallback: call notification-service over HTTP
+    try {
+      const fallbackResult = await notificationClient.sendNotification({
+        to,
+        type: 'EMAIL_VERIFICATION',
+        data: { name, otp },
+      });
+      console.log(`[auth-mailer] notification-service fallback succeeded for ${to}`);
+      return fallbackResult;
+    } catch (fallbackErr) {
+      console.error(`[auth-mailer] notification-service fallback also failed: ${fallbackErr.message}`);
+      // Do not rethrow: user registration must succeed even if email dispatch fails temporarily
+      return null;
+    }
   }
 }
 
@@ -77,15 +97,22 @@ async function sendPasswordResetEmail(to, name, otp) {
       `,
     });
 
-    if (!process.env.SMTP_HOST) {
-      console.log(`[auth-mailer] SIMULATED password reset email to ${to}, OTP: ${otp}`);
-    } else {
-      console.log(`[auth-mailer] Password reset email sent to ${to}, messageId: ${info.messageId}`);
-    }
+    console.log(`[auth-mailer] Direct password reset email sent to ${to}, messageId: ${info.messageId}`);
     return info;
   } catch (err) {
-    console.error(`[auth-mailer] Failed to send password reset email to ${to}:`, err.message);
-    throw err;
+    console.error(`[auth-mailer] Direct SMTP password reset failed for ${to}: ${err.message}. Trying notification-service fallback...`);
+    try {
+      const fallbackResult = await notificationClient.sendNotification({
+        to,
+        type: 'PASSWORD_RESET',
+        data: { name, otp },
+      });
+      console.log(`[auth-mailer] notification-service fallback succeeded for password reset to ${to}`);
+      return fallbackResult;
+    } catch (fallbackErr) {
+      console.error(`[auth-mailer] notification-service fallback failed for password reset: ${fallbackErr.message}`);
+      return null;
+    }
   }
 }
 
