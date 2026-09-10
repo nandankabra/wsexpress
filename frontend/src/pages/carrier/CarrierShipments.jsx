@@ -9,10 +9,16 @@ import { Input } from '../../components/ui/Input';
 import { Search, ExternalLink, Truck, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
+import Scanner from '../../components/Scanner';
+import { Camera } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 export default function CarrierShipments() {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [showScanner, setShowScanner] = useState(false);
+  const navigate = useNavigate();
 
   function load() {
     setLoading(true);
@@ -28,6 +34,18 @@ export default function CarrierShipments() {
   useEffect(() => {
     load();
   }, []);
+
+  const handleScan = (decodedText) => {
+    setShowScanner(false);
+    toast.success(`Scanned: ${decodedText}`);
+    // Extract ID or STK code
+    const s = safeShipments.find(s => s.trackingId === decodedText || s.id === decodedText);
+    if (s) {
+      navigate(`/carrier/shipments/${s.id}`);
+    } else {
+      toast.error('Shipment not found in your assigned queue.');
+    }
+  };
 
   const safeShipments = Array.isArray(shipments) ? shipments : (shipments?.data || []);
 
@@ -57,6 +75,10 @@ export default function CarrierShipments() {
           <p className="text-sm text-zinc-500 mt-0.5">Assign, inspect, and update dispatch milestones across active shipments.</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="default" onClick={() => setShowScanner(!showScanner)}>
+            <Camera className="w-4 h-4 mr-2" />
+            {showScanner ? 'Close Scanner' : 'Scan Package'}
+          </Button>
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             <Input
@@ -71,6 +93,15 @@ export default function CarrierShipments() {
           </Button>
         </div>
       </div>
+
+      {showScanner && (
+        <Card className="mb-6 border-blue-200 bg-blue-50/50">
+          <CardContent className="p-6">
+            <h2 className="text-sm font-semibold mb-4 text-center">Scan QR Code on Package Label</h2>
+            <Scanner onScan={handleScan} onError={(err) => console.log('Scan error', err)} />
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="p-0">

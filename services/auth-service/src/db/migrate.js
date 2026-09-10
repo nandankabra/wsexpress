@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(120) NOT NULL,
   email VARCHAR(160) UNIQUE NOT NULL,
   password_hash VARCHAR(100) NOT NULL,
-  role VARCHAR(20) NOT NULL CHECK (role IN ('CUSTOMER', 'CARRIER', 'ADMIN')),
+  role VARCHAR(20) NOT NULL CHECK (role IN ('CUSTOMER', 'CARRIER', 'ADMIN', 'HUB_STAFF')),
   is_active BOOLEAN NOT NULL DEFAULT TRUE,
   is_verified BOOLEAN NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -39,6 +39,9 @@ async function migrate() {
   await pool.query('CREATE EXTENSION IF NOT EXISTS pgcrypto');
   await pool.query(SCHEMA);
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_verified BOOLEAN NOT NULL DEFAULT FALSE;');
+  // Drop and recreate constraint to allow HUB_STAFF
+  await pool.query('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;');
+  await pool.query("ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('CUSTOMER', 'CARRIER', 'ADMIN', 'HUB_STAFF'));");
   await pool.query("UPDATE users SET is_verified = TRUE WHERE role = 'ADMIN';");
 }
 

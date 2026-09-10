@@ -3,20 +3,31 @@ const { broadcastEvent } = require('./streamController');
 
 async function recordEvent(req, res, next) {
   try {
-    const recordedBy = req.user ? req.user.sub : 'system';
+    const { trackingId } = req.params;
+    const { status, location, lat, lng, note, hubId, scannerId, barcodeData } = req.body;
+    let recordedBy = 'SYSTEM';
+    if (req.user) {
+      recordedBy = req.user.role === 'CARRIER' || req.user.role === 'HUB_STAFF' 
+        ? `${req.user.role}_${req.user.sub.slice(0, 8)}` 
+        : req.user.sub;
+    }
+
     const event = await trackingEventService.recordEvent({
-      trackingId: req.params.trackingId,
-      status: req.body.status,
-      location: req.body.location,
-      lat: req.body.lat,
-      lng: req.body.lng,
-      note: req.body.note,
+      trackingId,
+      status,
+      location,
+      lat,
+      lng,
+      note,
       recordedBy,
+      hubId,
+      scannerId,
+      barcodeData
     });
     
     // Broadcast event to active SSE clients
     broadcastEvent(event);
-    
+
     res.status(201).json(event);
   } catch (err) {
     next(err);

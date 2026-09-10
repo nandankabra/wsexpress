@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getShipment, updateShipmentStatus } from '../api/shipments';
+import { getShipment, updateShipmentStatus, downloadLabel, downloadInvoice } from '../api/shipments';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Select } from '../components/ui/Select';
 import { Input } from '../components/ui/Input';
-import { MapPin, Package, ArrowLeft, Clock, Truck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { MapPin, Package, ArrowLeft, Clock, Truck, CheckCircle2, AlertCircle, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ShipmentDetail() {
@@ -43,17 +43,46 @@ export default function ShipmentDetail() {
     e.preventDefault();
     if (!shipment) return;
     setUpdating(true);
+    
+    const applyUpdate = async (lat, lng) => {
+      try {
+        await updateShipmentStatus(id, {
+          status: newStatus,
+          expectedVersion: shipment.version,
+          lat,
+          lng
+        });
+        toast.success(`Shipment status updated to ${newStatus.replace(/_/g, ' ')}`);
+        await fetchData();
+      } catch (err) {
+        toast.error(err.response?.data?.error || 'Failed to apply status update');
+      } finally {
+        setUpdating(false);
+      }
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => applyUpdate(pos.coords.latitude, pos.coords.longitude),
+        () => applyUpdate(undefined, undefined)
+      );
+    } else {
+      applyUpdate(undefined, undefined);
+    }
+  }
+
+  async function handleDownload(type) {
     try {
-      await updateShipmentStatus(id, {
-        status: newStatus,
-        expectedVersion: shipment.version,
-      });
-      toast.success(`Shipment status updated to ${newStatus.replace(/_/g, ' ')}`);
-      await fetchData();
+      const blob = type === 'label' ? await downloadLabel(id) : await downloadInvoice(id);
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${type}-${shipment.trackingId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
     } catch (err) {
-      toast.error(err.response?.data?.error?.message || 'Failed to update status');
-    } finally {
-      setUpdating(false);
+      toast.error(`Failed to download ${type}`);
     }
   }
 
@@ -194,11 +223,20 @@ export default function ShipmentDetail() {
                 </div>
               )}
               {shipment.estimatedDeliveryDate && (
-                <div className="flex justify-between py-1.5">
+                <div className="flex justify-between py-1.5 border-b border-zinc-100">
                   <span className="text-zinc-500">Est. Delivery</span>
                   <span className="font-medium text-zinc-900">{new Date(shipment.estimatedDeliveryDate).toLocaleDateString()}</span>
                 </div>
               )}
+              
+              <div className="pt-3 flex gap-2 flex-col sm:flex-row">
+                <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => handleDownload('label')}>
+                  <Download className="mr-1.5 h-3.5 w-3.5" /> Label (PDF)
+                </Button>
+                <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => handleDownload('invoice')}>
+                  <FileText className="mr-1.5 h-3.5 w-3.5" /> Invoice (PDF)
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

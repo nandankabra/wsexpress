@@ -20,7 +20,7 @@ router.get('/:id', authenticate, etag(), controller.getById);
 router.patch(
   '/:id/status',
   authenticate,
-  requireRole('CARRIER', 'ADMIN'),
+  requireRole('CARRIER', 'ADMIN', 'HUB_STAFF'),
   validate(schemas.updateStatusSchema),
   controller.updateStatus,
 );
@@ -31,6 +31,8 @@ router.patch(
   validate(schemas.assignCarrierSchema),
   controller.assignCarrier,
 );
+const documentController = require('../controllers/documentController');
+
 router.patch(
   '/:id/delivery',
   authenticate,
@@ -38,5 +40,8 @@ router.patch(
   validate(schemas.updateDeliverySchema),
   controller.updateDelivery,
 );
+
+router.get('/:id/label', authenticate, documentController.getLabel);
+router.get('/:id/invoice', authenticate, documentController.getInvoice);
 
 module.exports = router;

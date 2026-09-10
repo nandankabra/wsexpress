@@ -1,12 +1,22 @@
 const quoteSchema = {
   type: 'object',
   required: ['originCountry', 'destinationCountry', 'weightKg'],
-  additionalProperties: false,
   properties: {
     originCountry: { type: 'string', minLength: 2, maxLength: 2 },
     destinationCountry: { type: 'string', minLength: 2, maxLength: 2 },
-    weightKg: { type: 'number', minimum: 0.01, maximum: 1000 },
-    packageType: { type: 'string', enum: ['PARCEL', 'DOCUMENT', 'PALLET', 'FREIGHT'] },
+    originCity: { type: 'string' },
+    destinationCity: { type: 'string' },
+    weightKg: { type: 'number', minimum: 0.1 },
+    dimensionsCm: {
+      type: 'object',
+      properties: {
+        length: { type: 'number', minimum: 1 },
+        width: { type: 'number', minimum: 1 },
+        height: { type: 'number', minimum: 1 }
+      }
+    },
+    packageType: { type: 'string' },
+    serviceType: { type: 'string', enum: ['STANDARD', 'EXPRESS'] },
     currency: { type: 'string', minLength: 3, maxLength: 3 },
   },
 };

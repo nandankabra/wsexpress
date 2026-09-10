@@ -15,3 +15,9 @@ export const assignCarrier = (id, carrierId, expectedVersion) =>
   apiClient.patch(`/shipments/${id}/assign-carrier`, { carrierId, expectedVersion }).then((r) => r.data);
 export const updateDelivery = (id, body) =>
   apiClient.patch(`/shipments/${id}/delivery`, body).then((r) => r.data);
+
+export const downloadLabel = (id) =>
+  apiClient.get(`/shipments/${id}/label`, { responseType: 'blob' }).then((r) => r.data);
+
+export const downloadInvoice = (id) =>
+  apiClient.get(`/shipments/${id}/invoice`, { responseType: 'blob' }).then((r) => r.data);

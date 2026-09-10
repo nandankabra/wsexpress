@@ -11,12 +11,15 @@ function toResponse(doc) {
     lng: doc.lng || null,
     note: doc.note || null,
     recordedBy: doc.recordedBy || null,
+    hubId: doc.hubId || null,
+    scannerId: doc.scannerId || null,
+    barcodeData: doc.barcodeData || null,
     timestamp: doc.timestamp,
   };
 }
 
-async function recordEvent({ trackingId, status, location, lat, lng, note, recordedBy }) {
-  const doc = await trackingEventModel.create({ trackingId, status, location, lat, lng, note, recordedBy });
+async function recordEvent({ trackingId, status, location, lat, lng, note, recordedBy, hubId, scannerId, barcodeData }) {
+  const doc = await trackingEventModel.create({ trackingId, status, location, lat, lng, note, recordedBy, hubId, scannerId, barcodeData });
   return toResponse(doc);
 }
 

@@ -5,13 +5,17 @@ async function create(data) {
     `INSERT INTO shipments
        (tracking_id, customer_id, origin_address, origin_city, origin_country,
         destination_address, destination_city, destination_country, weight_kg,
-        package_type, quoted_price, currency, estimated_delivery_date)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+        dimensions_cm, package_type, service_type,
+        quoted_price, base_fare, distance_charge, weight_charge, tax_amount, total_amount, currency,
+        estimated_delivery_date, current_hub_id, destination_hub_id)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
      RETURNING *`,
     [
       data.trackingId, data.customerId, data.originAddress, data.originCity, data.originCountry,
       data.destinationAddress, data.destinationCity, data.destinationCountry, data.weightKg,
-      data.packageType, data.quotedPrice, data.currency, data.estimatedDeliveryDate,
+      data.dimensionsCm, data.packageType, data.serviceType,
+      data.quotedPrice, data.baseFare, data.distanceCharge, data.weightCharge, data.taxAmount, data.totalAmount, data.currency,
+      data.estimatedDeliveryDate, data.currentHubId, data.destinationHubId
     ],
   );
   return rows[0];
@@ -36,13 +40,12 @@ async function listPage({ limit, afterId, customerId, carrierId, carrierScope, s
     clauses.push(`customer_id = $${params.length}`);
   }
   if (carrierScope) {
-    // A carrier's shipment list includes shipments already assigned to them plus
-    // unassigned ones available to claim (mirrors the single-resource view/claim rules).
+    // Carrier sees their assigned shipments or unassigned shipments they can claim
     params.push(carrierScope);
-    clauses.push(`(carrier_id = $${params.length} OR carrier_id IS NULL)`);
+    clauses.push(`(assigned_driver_id = $${params.length} OR (assigned_driver_id IS NULL AND status IN ('CREATED', 'ARRIVED_AT_HUB')))`);
   } else if (carrierId) {
     params.push(carrierId);
-    clauses.push(`carrier_id = $${params.length}`);
+    clauses.push(`assigned_driver_id = $${params.length}`);
   }
   if (status) {
     params.push(status);
@@ -57,17 +60,17 @@ async function listPage({ limit, afterId, customerId, carrierId, carrierScope, s
   return rows;
 }
 
-async function updateStatus(id, { status, expectedVersion, carrierId }) {
+async function updateStatus(id, { status, expectedVersion, assignedDriverId }) {
   const params = [id, status];
-  let carrierClause = '';
-  if (carrierId) {
-    params.push(carrierId);
-    carrierClause = `, carrier_id = $${params.length}`;
+  let driverClause = '';
+  if (assignedDriverId !== undefined) {
+    params.push(assignedDriverId);
+    driverClause = `, assigned_driver_id = $${params.length}, carrier_id = $${params.length}`; // carrier_id kept for backward compat temporarily
   }
   params.push(expectedVersion);
   const { rows } = await pool.query(
     `UPDATE shipments
-     SET status = $2, version = version + 1, updated_at = now() ${carrierClause}
+     SET status = $2, version = version + 1, updated_at = now() ${driverClause}
      WHERE id = $1 AND version = $${params.length}
      RETURNING *`,
     params,

@@ -19,37 +19,79 @@ async function convertCurrency(amount, fromCurrency, toCurrency) {
   return round2(amountInUsd / Number(to.rate_to_usd));
 }
 
-async function calculateQuote({ originCountry, destinationCountry, weightKg, packageType, currency }, correlationId) {
+// Mock distance function for consistent km based on city string length
+function mockDistance(cityA, cityB) {
+  if (!cityA || !cityB || cityA.toUpperCase() === cityB.toUpperCase()) return 50;
+  const hash = (cityA + cityB).split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0);
+  return Math.abs(hash % 2000) + 100; // 100 to 2100 km
+}
+
+async function calculateQuote({ originCountry, destinationCountry, originCity, destinationCity, weightKg, dimensionsCm, packageType, serviceType, currency }, correlationId) {
   const type = packageType || DEFAULT_PACKAGE_TYPE;
+  const srvType = serviceType || 'STANDARD';
   const rule = (await pricingModel.findRule(type)) || (await pricingModel.findRule(DEFAULT_PACKAGE_TYPE));
   if (!rule) throw ApiError.internal('No pricing rules configured');
 
   const isInternational = originCountry.toUpperCase() !== destinationCountry.toUpperCase();
-  let priceUsd = Number(rule.base_rate) + Number(rule.per_kg_rate) * weightKg;
-  if (isInternational) priceUsd *= Number(rule.international_multiplier);
+  
+  // 1. Calculate Chargeable Weight (Volumetric vs Actual)
+  const volWeight = dimensionsCm ? (dimensionsCm.length * dimensionsCm.width * dimensionsCm.height) / 5000 : 0;
+  const chargeableWeight = Math.max(weightKg, volWeight);
 
-  // Real SOAP request to location-service's CountryInfoService (reads its WSDL, then calls
-  // GetCountryInfo) to validate the destination country and pick its local currency when the
-  // caller didn't request a specific one. Degrades to USD if the SOAP call fails.
+  // 2. Base & Weight Pricing
+  let baseUsd = Number(rule.base_rate);
+  let weightUsd = Number(rule.per_kg_rate) * chargeableWeight;
+  
+  // 3. Distance Pricing
+  const distanceKm = mockDistance(originCity, destinationCity);
+  let distanceUsd = distanceKm * 0.05; // 5 cents per km
+
+  if (isInternational) {
+    baseUsd *= Number(rule.international_multiplier);
+    distanceUsd *= Number(rule.international_multiplier);
+  }
+
+  // 4. Service Type Multiplier
+  let subTotalUsd = baseUsd + weightUsd + distanceUsd;
+  if (srvType === 'EXPRESS') {
+    subTotalUsd *= 1.5;
+  }
+
+  // 5. Tax (18%)
+  const taxUsd = subTotalUsd * 0.18;
+  const totalUsd = subTotalUsd + taxUsd;
+
   let destinationCurrency = 'USD';
   try {
     const countryInfo = await countryClient.getCountryInfo(destinationCountry);
     if (countryInfo) destinationCurrency = countryInfo.currency;
   } catch (err) {
-    // location-service SOAP endpoint unavailable - degrade gracefully to USD pricing, but
-    // still surface it: a silent catch here previously hid a real bug (stale WSDL endpoint).
     console.error(`[pricing-service] SOAP GetCountryInfo(${destinationCountry}) failed:`, err.message);
   }
 
   const targetCurrency = (currency || destinationCurrency || 'USD').toUpperCase();
-  const priceAmount = await convertCurrency(priceUsd, 'USD', targetCurrency);
+  
+  // Convert all breakdowns to target currency
+  const baseFare = await convertCurrency(baseUsd, 'USD', targetCurrency);
+  const distanceCharge = await convertCurrency(distanceUsd, 'USD', targetCurrency);
+  const weightCharge = await convertCurrency(weightUsd, 'USD', targetCurrency);
+  const taxAmount = await convertCurrency(taxUsd, 'USD', targetCurrency);
+  const totalAmount = await convertCurrency(totalUsd, 'USD', targetCurrency);
 
   const route = await locationClient.getRoute(originCountry, destinationCountry, correlationId);
-  const estimatedDays = route
-    ? route.transitDays
-    : (isInternational ? FALLBACK_TRANSIT_DAYS.international : FALLBACK_TRANSIT_DAYS.domestic);
+  const baseDays = route ? route.transitDays : (isInternational ? FALLBACK_TRANSIT_DAYS.international : FALLBACK_TRANSIT_DAYS.domestic);
+  const estimatedDays = srvType === 'EXPRESS' ? Math.max(1, Math.floor(baseDays / 2)) : baseDays;
 
-  return { priceAmount, currency: targetCurrency, estimatedDays };
+  return { 
+    priceAmount: totalAmount, // backward compat
+    baseFare,
+    distanceCharge,
+    weightCharge,
+    taxAmount,
+    totalAmount,
+    currency: targetCurrency, 
+    estimatedDays 
+  };
 }
 
 function ruleResponse(row) {

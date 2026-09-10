@@ -14,21 +14,61 @@ const quoteSchema = {
   properties: {
     origin: addressSchema,
     destination: addressSchema,
-    weightKg: { type: 'number', minimum: 0.01, maximum: 1000 },
-    packageType: { type: 'string', enum: ['PARCEL', 'DOCUMENT', 'PALLET', 'FREIGHT'] },
+    weightKg: { type: 'number', minimum: 0.1 },
+    dimensionsCm: {
+      type: 'object',
+      properties: {
+        length: { type: 'number', minimum: 1 },
+        width: { type: 'number', minimum: 1 },
+        height: { type: 'number', minimum: 1 }
+      },
+      required: ['length', 'width', 'height']
+    },
+    packageType: { type: 'string', minLength: 1 },
+    serviceType: { type: 'string', enum: ['STANDARD', 'EXPRESS'] },
     currency: { type: 'string', minLength: 3, maxLength: 3 },
   },
 };
 
-const createShipmentSchema = quoteSchema;
+const createShipmentSchema = {
+  type: 'object',
+  required: ['origin', 'destination', 'weightKg'],
+  properties: {
+    origin: addressSchema,
+    destination: addressSchema,
+    weightKg: { type: 'number', minimum: 0.1 },
+    dimensionsCm: {
+      type: 'object',
+      properties: {
+        length: { type: 'number', minimum: 1 },
+        width: { type: 'number', minimum: 1 },
+        height: { type: 'number', minimum: 1 }
+      },
+      required: ['length', 'width', 'height']
+    },
+    packageType: { type: 'string', minLength: 1 },
+    serviceType: { type: 'string', enum: ['STANDARD', 'EXPRESS'] },
+    currency: { type: 'string', minLength: 3, maxLength: 3 },
+    estimatedDeliveryDate: { type: 'string', format: 'date' },
+    quotedPrice: { type: 'number', minimum: 0 },
+    baseFare: { type: 'number', minimum: 0 },
+    distanceCharge: { type: 'number', minimum: 0 },
+    weightCharge: { type: 'number', minimum: 0 },
+    taxAmount: { type: 'number', minimum: 0 },
+    totalAmount: { type: 'number', minimum: 0 }
+  },
+};
 
 const updateStatusSchema = {
   type: 'object',
   required: ['status', 'expectedVersion'],
-  additionalProperties: false,
   properties: {
-    status: { type: 'string', enum: ['PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'] },
+    status: { type: 'string', enum: ['ASSIGNED', 'PICKED_UP', 'ARRIVED_AT_HUB', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'] },
     expectedVersion: { type: 'integer', minimum: 1 },
+    hubId: { type: 'string' },
+    note: { type: 'string' },
+    lat: { type: 'number' },
+    lng: { type: 'number' }
   },
 };
 
