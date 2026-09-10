@@ -97,6 +97,28 @@ export default function VerifyEmail() {
                 {status === 'loading' ? 'Verifying...' : 'Validate Code'}
               </Button>
             </form>
+            
+            <div className="mt-4 text-center">
+              <button 
+                type="button" 
+                onClick={async () => {
+                  if (!email) return toast.error('Please enter your email first');
+                  try {
+                    await fetch('/api/v1/auth/resend-verification', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email })
+                    });
+                    toast.success('A new verification code has been sent!');
+                  } catch (e) {
+                    toast.error('Failed to resend code. Please try again later.');
+                  }
+                }}
+                className="text-xs text-indigo-600 font-medium hover:text-indigo-500 hover:underline transition-colors"
+              >
+                Didn't receive the code? Resend
+              </button>
+            </div>
           </CardContent>
         </Card>
       </div>

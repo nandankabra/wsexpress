@@ -81,6 +81,11 @@ services:
       DATABASE_URL: ${AUTH_DATABASE_URL:-${POSTGRES_URL:-postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/auth_db}}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@shiptrack.local}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@12345}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-ShipTrack <no-reply@shiptrack.local>}
       CRM_SERVICE_URL: http://crm-service:8008
       NOTIFICATION_SERVICE_URL: http://notification-service:8010
     ports: ["8001:8001"]
