@@ -12,6 +12,7 @@ const refreshTokenModel = require('../models/refreshTokenModel');
 const verificationTokenModel = require('../models/verificationTokenModel');
 const crmClient = require('../clients/crmClient');
 const notificationClient = require('../clients/notificationClient');
+const { sendVerificationEmail, sendPasswordResetEmail } = require('./mailer');
 
 function refreshExpiryDate() {
   const days = 7;
@@ -61,12 +62,8 @@ async function register({ name, email, password }, correlationId) {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await verificationTokenModel.createToken(existing.id, hash, 'EMAIL_VERIFICATION', expiresAt);
 
-    // Resend email
-    await notificationClient.sendNotification({
-      to: email,
-      type: 'EMAIL_VERIFICATION',
-      data: { name: existing.name || name, otp }
-    }, correlationId);
+    // Send verification email directly
+    await sendVerificationEmail(email, existing.name || name, otp);
 
     return { user: toUserResponse(existing) };
   }
@@ -80,12 +77,8 @@ async function register({ name, email, password }, correlationId) {
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
   await verificationTokenModel.createToken(user.id, hash, 'EMAIL_VERIFICATION', expiresAt);
 
-  // Send email via notification service
-  await notificationClient.sendNotification({
-    to: email,
-    type: 'EMAIL_VERIFICATION',
-    data: { name: user.name, otp }
-  }, correlationId);
+  // Send verification email directly
+  await sendVerificationEmail(email, user.name, otp);
 
   await crmClient.recordEvent('CUSTOMER_REGISTERED', { entityId: user.id, customerId: user.id }, correlationId);
 
@@ -120,11 +113,7 @@ async function forgotPassword(email) {
   const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
   await verificationTokenModel.createToken(user.id, hash, 'PASSWORD_RESET', expiresAt);
 
-  await notificationClient.sendNotification({
-    to: email,
-    type: 'PASSWORD_RESET',
-    data: { name: user.name, otp }
-  });
+  await sendPasswordResetEmail(email, user.name, otp);
 }
 
 async function resetPassword(email, otp, newPassword) {
@@ -221,11 +210,7 @@ async function resendVerification(email) {
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
   await verificationTokenModel.createToken(user.id, hash, 'EMAIL_VERIFICATION', expiresAt);
 
-  await notificationClient.sendNotification({
-    to: email,
-    type: 'EMAIL_VERIFICATION',
-    data: { name: user.name, otp }
-  });
+  await sendVerificationEmail(email, user.name, otp);
 }
 
 module.exports = { register, verifyEmail, resendVerification, forgotPassword, resetPassword, adminCreateAccount, login, refresh, logout, getProfile, toUserResponse };
