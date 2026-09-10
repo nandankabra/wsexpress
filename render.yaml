@@ -34,9 +34,9 @@ envVarGroups:
       - key: SMTP_PORT
         value: "587"
       - key: SMTP_USER
-        sync: false # Paste your Gmail address (e.g. guptaabhinav697@gmail.com)
+        value: guptaabhinav697@gmail.com
       - key: SMTP_PASSWORD
-        sync: false # Paste your Gmail App Password
+        value: tafouptkutwvcpoc
       - key: SMTP_FROM
         value: "ShipTrack <guptaabhinav697@gmail.com>"
       - key: ADMIN_EMAIL
