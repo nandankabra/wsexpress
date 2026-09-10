@@ -149,7 +149,7 @@ describe('GET /api/v1/shipments (carrier scope)', () => {
 
 describe('PATCH /api/v1/shipments/:id/status', () => {
   test('rejects an invalid state transition', async () => {
-    shipmentModel.findById.mockResolvedValue({ ...dbRow, status: 'DELIVERED' });
+    shipmentModel.findById.mockResolvedValue({ ...dbRow, status: 'DELIVERED', assigned_driver_id: 'carrier-1' });
     const res = await request(app)
       .patch('/api/v1/shipments/ship-1/status')
       .set('Authorization', `Bearer ${carrierToken}`)
@@ -158,33 +158,33 @@ describe('PATCH /api/v1/shipments/:id/status', () => {
   });
 
   test('returns 412 on a version mismatch', async () => {
-    shipmentModel.findById.mockResolvedValue(dbRow);
+    shipmentModel.findById.mockResolvedValue({ ...dbRow, assigned_driver_id: 'carrier-1' });
     shipmentModel.updateStatus.mockResolvedValue(null);
     const res = await request(app)
       .patch('/api/v1/shipments/ship-1/status')
       .set('Authorization', `Bearer ${carrierToken}`)
-      .send({ status: 'PICKED_UP', expectedVersion: 99 });
+      .send({ status: 'ASSIGNED', expectedVersion: 99 });
     expect(res.status).toBe(412);
   });
 
   test('updates status and fires a tracking event, but no CRM event for a non-terminal status', async () => {
-    shipmentModel.findById.mockResolvedValue(dbRow);
-    shipmentModel.updateStatus.mockResolvedValue({ ...dbRow, status: 'PICKED_UP', version: 2 });
+    shipmentModel.findById.mockResolvedValue({ ...dbRow, assigned_driver_id: 'carrier-1' });
+    shipmentModel.updateStatus.mockResolvedValue({ ...dbRow, status: 'ASSIGNED', assigned_driver_id: 'carrier-1', version: 2 });
     trackingClient.recordEvent.mockResolvedValue(null);
 
     const res = await request(app)
       .patch('/api/v1/shipments/ship-1/status')
       .set('Authorization', `Bearer ${carrierToken}`)
-      .send({ status: 'PICKED_UP', expectedVersion: 1 });
+      .send({ status: 'ASSIGNED', expectedVersion: 1 });
 
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe('PICKED_UP');
+    expect(res.body.status).toBe('ASSIGNED');
     expect(trackingClient.recordEvent).toHaveBeenCalled();
     expect(crmClient.recordEvent).not.toHaveBeenCalled();
   });
 
   test('transitioning to DELIVERED records a SHIPMENT_DELIVERED CRM event', async () => {
-    const outForDelivery = { ...dbRow, status: 'OUT_FOR_DELIVERY', carrier_id: 'carrier-1' };
+    const outForDelivery = { ...dbRow, status: 'OUT_FOR_DELIVERY', carrier_id: 'carrier-1', assigned_driver_id: 'carrier-1' };
     shipmentModel.findById.mockResolvedValue(outForDelivery);
     shipmentModel.updateStatus.mockResolvedValue({ ...outForDelivery, status: 'DELIVERED', version: 5 });
     trackingClient.recordEvent.mockResolvedValue(null);
