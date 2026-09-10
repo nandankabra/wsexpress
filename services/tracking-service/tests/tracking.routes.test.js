@@ -40,19 +40,19 @@ describe('POST /api/v1/tracking/:trackingId/events', () => {
     expect(res.status).toBe(201);
     expect(res.body.recordedBy).toBe('system');
     expect(trackingEventModel.create).toHaveBeenCalledWith(
-      expect.objectContaining({ trackingId: 'STKABC123', recordedBy: 'system' }),
+      expect.objectContaining({ trackingId: 'STKABC123', recordedBy: 'SYSTEM' }),
     );
   });
 
   test('records recordedBy from an authenticated carrier', async () => {
-    trackingEventModel.create.mockResolvedValue({ ...eventDoc, recordedBy: 'carrier-1' });
+    trackingEventModel.create.mockResolvedValue({ ...eventDoc, recordedBy: 'CARRIER_carrier-' });
     const res = await request(app)
       .post('/api/v1/tracking/STKABC123/events')
       .set('Authorization', `Bearer ${carrierToken}`)
       .send({ status: 'PICKED_UP' });
     expect(res.status).toBe(201);
     expect(trackingEventModel.create).toHaveBeenCalledWith(
-      expect.objectContaining({ recordedBy: 'carrier-1' }),
+      expect.objectContaining({ recordedBy: 'CARRIER_carrier-' }),
     );
   });
 });
