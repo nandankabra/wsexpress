@@ -29,7 +29,7 @@ export function clearSession() {
   localStorage.removeItem(USER_KEY);
 }
 
-const apiClient = axios.create({ baseURL: '/api/v1' });
+const apiClient = axios.create({ baseURL: '/api/v1', timeout: 15000 });
 
 apiClient.interceptors.request.use((config) => {
   const token = getAccessToken();

@@ -16,6 +16,8 @@ function getTransporter() {
       port: Number(process.env.SMTP_PORT) || 587,
       auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD } : undefined,
     });
+  } else if (process.env.NODE_ENV === 'production') {
+    throw new Error('SMTP_HOST must be configured in production');
   } else {
     transporter = nodemailer.createTransport({ jsonTransport: true });
   }
@@ -29,6 +31,15 @@ async function sendMail({ to, subject, text }) {
     subject,
     text,
   });
+
+  if (!process.env.SMTP_HOST) {
+    console.log('\n--- SIMULATED EMAIL SENT ---');
+    console.log(`To: ${to}`);
+    console.log(`Subject: ${subject}`);
+    console.log(`Body:\n${text}`);
+    console.log('----------------------------\n');
+  }
+
   return info;
 }
 

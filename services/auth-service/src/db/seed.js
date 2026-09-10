@@ -7,10 +7,15 @@ async function seedAdmin() {
   if (!email || !password) return;
 
   const existing = await userModel.findByEmail(email);
-  if (existing) return;
+  if (existing) {
+    if (!existing.is_verified) {
+      await userModel.updateVerification(existing.id, true);
+    }
+    return;
+  }
 
   const passwordHash = await hashPassword(password);
-  await userModel.create({ name: 'Platform Admin', email, passwordHash, role: 'ADMIN' });
+  await userModel.create({ name: 'Platform Admin', email, passwordHash, role: 'ADMIN', isVerified: true });
 }
 
 module.exports = { seedAdmin };

@@ -1,97 +1,98 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { listShipments } from '../../api/shipments';
-import { getMyCarrierProfile, upsertMyCarrierProfile } from '../../api/carriers';
-import Card from '../../components/Card';
-
-const EMPTY = { companyName: '', contactEmail: '', contactPhone: '', vehicleType: '', licenseNumber: '', serviceAreas: '' };
+import { Card, CardContent } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { Truck, CheckCircle2, Navigation, ArrowRight, Package } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 export default function CarrierDashboard() {
-  const [profile, setProfile] = useState(null);
-  const [form, setForm] = useState(EMPTY);
-  const [counts, setCounts] = useState({ assigned: 0, available: 0 });
+  const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    Promise.all([
-      getMyCarrierProfile().catch(() => null),
-      listShipments({ limit: 50 }).catch(() => ({ data: [] })),
-    ]).then(([profileData, shipmentsData]) => {
-      setProfile(profileData);
-      if (profileData) setForm({ ...EMPTY, ...profileData });
-      const shipments = shipmentsData.data || [];
-      setCounts({
-        assigned: shipments.filter((s) => s.carrierId).length,
-        available: shipments.filter((s) => !s.carrierId).length,
-      });
-      setLoading(false);
-    });
+    listShipments()
+      .then((res) => {
+        const items = Array.isArray(res) ? res : (res?.data || []);
+        setShipments(items);
+      })
+      .catch(() => toast.error('Failed to load fleet shipments'))
+      .finally(() => setLoading(false));
   }, []);
 
-  function update(field) {
-    return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
-  }
+  const safeShipments = Array.isArray(shipments) ? shipments : (shipments?.data || []);
 
-  async function handleSave(e) {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const saved = await upsertMyCarrierProfile(form);
-      setProfile(saved);
-    } finally {
-      setSaving(false);
-    }
-  }
+  const inTransitCount = safeShipments.filter((s) => ['IN_TRANSIT', 'OUT_FOR_DELIVERY'].includes(s.status)).length;
+  const pendingPickup = safeShipments.filter((s) => ['CREATED', 'PICKED_UP', 'PENDING'].includes(s.status)).length;
+  const deliveredCount = safeShipments.filter((s) => s.status === 'DELIVERED').length;
 
-  if (loading) return <p className="p-8 text-slate-500">Loading...</p>;
+  const stats = [
+    { name: 'Active Deliveries', value: inTransitCount, icon: Navigation, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { name: 'Pending Pickup', value: pendingPickup, icon: Truck, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { name: 'Total Delivered', value: deliveredCount, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+  ];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-8">
-      <h1 className="text-2xl font-bold text-slate-900">Carrier Dashboard</h1>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <Link to="/carrier/shipments" className="rounded-lg border border-slate-200 bg-white p-5 hover:border-brand-400">
-          <p className="text-3xl font-bold text-slate-900">{counts.assigned}</p>
-          <p className="text-sm text-slate-600">Assigned to me</p>
-        </Link>
-        <Link to="/carrier/shipments" className="rounded-lg border border-slate-200 bg-white p-5 hover:border-brand-400">
-          <p className="text-3xl font-bold text-slate-900">{counts.available}</p>
-          <p className="text-sm text-slate-600">Available to claim</p>
-        </Link>
+    <div className="space-y-8 max-w-6xl mx-auto">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Carrier Fleet Dashboard</h1>
+        <p className="text-sm text-zinc-500 mt-0.5">Real-time status overview of all shipments in your assigned transport pool.</p>
       </div>
 
-      <Card title={profile ? 'Carrier Profile' : 'Complete Your Carrier Profile'} className="mt-8">
-        <form onSubmit={handleSave} className="grid gap-4 sm:grid-cols-2">
-          {[
-            ['companyName', 'Company name', true],
-            ['contactEmail', 'Contact email', true],
-            ['contactPhone', 'Contact phone', false],
-            ['vehicleType', 'Vehicle type', false],
-            ['licenseNumber', 'License number', false],
-            ['serviceAreas', 'Service areas', false],
-          ].map(([key, label, required]) => (
-            <div key={key}>
-              <label className="block text-sm font-medium text-slate-700">{label}</label>
-              <input
-                value={form[key] || ''}
-                onChange={update(key)}
-                required={required}
-                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-              />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {loading ? (
+          Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)
+        ) : (
+          stats.map((stat, i) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div key={stat.name} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
+                <Card className="hover:border-zinc-300 transition-colors">
+                  <CardContent className="p-5 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">{stat.name}</p>
+                      <p className="text-3xl font-bold text-zinc-900 mt-1">{stat.value}</p>
+                    </div>
+                    <div className={`p-3 rounded-xl ${stat.bg}`}>
+                      <Icon className={`h-6 w-6 ${stat.color}`} />
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-zinc-900">Quick Route Actions</h2>
+          <Link to="/carrier/shipments">
+            <Button variant="ghost" size="sm" className="text-indigo-600 hover:text-indigo-700">
+              Manage all ({safeShipments.length}) <ArrowRight className="ml-1 h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </div>
+
+        <Card className="border-dashed bg-zinc-50/50">
+          <CardContent className="flex flex-col items-center justify-center py-14 text-center px-4">
+            <div className="h-12 w-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-3">
+              <Navigation className="h-6 w-6" />
             </div>
-          ))}
-          <div className="sm:col-span-2">
-            <button
-              type="submit"
-              disabled={saving}
-              className="rounded-md bg-brand-600 px-5 py-2 font-medium text-white hover:bg-brand-700 disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : 'Save Profile'}
-            </button>
-          </div>
-        </form>
-      </Card>
+            <h3 className="text-sm font-semibold text-zinc-900">Fleet Route & Dispatch Monitor</h3>
+            <p className="text-xs text-zinc-500 max-w-sm mt-1">
+              Select any assigned freight manifest to post telemetry location events, confirm pickups, and record deliveries.
+            </p>
+            <div className="mt-5">
+              <Link to="/carrier/shipments">
+                <Button size="sm">Open Assigned Shipments</Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

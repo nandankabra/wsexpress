@@ -10,6 +10,7 @@ const {
   notFoundHandler,
   rateLimiter,
   swaggerDocs,
+  assertProductionConfig,
 } = require('@shiptrack/common');
 const { gatewayAuth } = require('./middleware/gatewayAuth');
 const { createServiceProxy } = require('./proxy/createServiceProxy');
@@ -18,12 +19,21 @@ const { buildRouteTable } = require('./proxy/routes');
 const SERVICE_NAME = 'api-gateway';
 
 function buildApp() {
+  assertProductionConfig();
   const app = express();
   const logger = createLogger(SERVICE_NAME);
+  const allowedOrigins = (process.env.CORS_ORIGIN || '*')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors());
+  app.use(cors({
+    origin: allowedOrigins.includes('*')
+      ? true
+      : (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)),
+  }));
   app.use(correlationId);
   app.use(requestLogger(logger));
   // Deliberately no express.json() here: this is a pure reverse proxy, so request bodies

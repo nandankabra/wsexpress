@@ -16,10 +16,9 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
-  const register = useCallback(async (name, email, password) => {
-    const data = await authApi.register({ name, email, password });
-    storeSession(data);
-    setUser(data.user);
+  const register = useCallback(async (name, email, password, idempotencyKey) => {
+    const data = await authApi.register({ name, email, password }, idempotencyKey);
+    // User is created but unverified, so we don't store tokens or log them in yet
     return data.user;
   }, []);
 

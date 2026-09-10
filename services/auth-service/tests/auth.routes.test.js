@@ -4,12 +4,16 @@ process.env.NODE_ENV = 'test';
 
 jest.mock('../src/models/userModel');
 jest.mock('../src/models/refreshTokenModel');
+jest.mock('../src/models/verificationTokenModel');
 jest.mock('../src/clients/crmClient');
+jest.mock('../src/clients/notificationClient');
 
 const request = require('supertest');
 const userModel = require('../src/models/userModel');
 const refreshTokenModel = require('../src/models/refreshTokenModel');
+const verificationTokenModel = require('../src/models/verificationTokenModel');
 const crmClient = require('../src/clients/crmClient');
+const notificationClient = require('../src/clients/notificationClient');
 const { buildApp } = require('../src/app');
 
 const app = buildApp();
@@ -18,9 +22,10 @@ const existingUser = {
   id: '11111111-1111-1111-1111-111111111111',
   name: 'Ada Lovelace',
   email: 'ada@example.com',
-  password_hash: '$2a$10$abcdefghijklmnopqrstuv', // overridden per-test via comparePassword mock is not used; use real bcrypt hash instead
+  password_hash: '$2a$10$abcdefghijklmnopqrstuv', 
   role: 'CUSTOMER',
   is_active: true,
+  is_verified: true,
   created_at: new Date().toISOString(),
 };
 
@@ -33,10 +38,11 @@ describe('POST /api/v1/auth/register', () => {
     expect(res.body.error.code).toBe('BAD_REQUEST');
   });
 
-  test('creates a CUSTOMER account, returns tokens, and records a CRM analytics event', async () => {
+  test('creates a CUSTOMER account, sends verification email, and records a CRM analytics event', async () => {
     userModel.findByEmail.mockResolvedValue(null);
-    userModel.create.mockResolvedValue({ ...existingUser, id: 'new-id' });
-    refreshTokenModel.store.mockResolvedValue();
+    userModel.create.mockResolvedValue({ ...existingUser, id: 'new-id', is_verified: false });
+    verificationTokenModel.createToken.mockResolvedValue();
+    notificationClient.sendNotification.mockResolvedValue();
     crmClient.recordEvent.mockResolvedValue(null);
 
     const res = await request(app)
@@ -45,10 +51,14 @@ describe('POST /api/v1/auth/register', () => {
 
     expect(res.status).toBe(201);
     expect(res.body.user.role).toBe('CUSTOMER');
-    expect(res.body.accessToken).toBeDefined();
-    expect(res.body.refreshToken).toBeDefined();
+    expect(res.body.accessToken).toBeUndefined(); // no tokens until verified
     expect(userModel.create).toHaveBeenCalledWith(
-      expect.objectContaining({ email: 'grace@example.com', role: 'CUSTOMER' }),
+      expect.objectContaining({ email: 'grace@example.com', role: 'CUSTOMER', isVerified: false }),
+    );
+    expect(verificationTokenModel.createToken).toHaveBeenCalled();
+    expect(notificationClient.sendNotification).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'EMAIL_VERIFICATION', to: 'grace@example.com' }),
+      expect.anything()
     );
     expect(crmClient.recordEvent).toHaveBeenCalledWith(
       'CUSTOMER_REGISTERED',
@@ -86,6 +96,17 @@ describe('POST /api/v1/auth/login', () => {
       .post('/api/v1/auth/login')
       .send({ email: 'ada@example.com', password: 'wrong-password' });
     expect(res.status).toBe(401);
+  });
+
+  test('returns 403 for an unverified email', async () => {
+    const bcrypt = require('bcryptjs');
+    const hash = await bcrypt.hash('correct-password', 10);
+    userModel.findByEmail.mockResolvedValue({ ...existingUser, password_hash: hash, is_verified: false });
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ email: 'ada@example.com', password: 'correct-password' });
+    expect(res.status).toBe(403);
+    expect(res.body.error.message).toMatch(/verify your email/i);
   });
 
   test('logs in and returns tokens for correct credentials', async () => {

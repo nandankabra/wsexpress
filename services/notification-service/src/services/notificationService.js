@@ -20,6 +20,14 @@ const TEMPLATES = {
     subject: `Shipment ${data.trackingId} delivered`,
     text: `Your shipment ${data.trackingId} has been delivered. Thanks for using ShipTrack!`,
   }),
+  EMAIL_VERIFICATION: (data) => ({
+    subject: 'Verify your ShipTrack Email',
+    text: `Hi ${data.name}, your 6-digit email verification code is: ${data.otp}`,
+  }),
+  PASSWORD_RESET: (data) => ({
+    subject: 'Reset your ShipTrack Password',
+    text: `Hi ${data.name}, you requested a password reset. Your 6-digit reset code is: ${data.otp}`,
+  }),
 };
 
 function render({ type, subject, message, data = {} }) {

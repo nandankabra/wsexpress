@@ -35,13 +35,14 @@ async function setVerified(userId, isVerified) {
   return rows[0] || null;
 }
 
-async function listPage({ limit, afterUserId }) {
+async function listPage({ limit, afterUserId, email }) {
   const { rows } = await pool.query(
     `SELECT * FROM carriers
      WHERE ($1::uuid IS NULL OR user_id > $1)
+       AND ($3::text IS NULL OR contact_email ILIKE '%' || $3 || '%')
      ORDER BY user_id ASC
      LIMIT $2`,
-    [afterUserId || null, limit + 1],
+    [afterUserId || null, limit + 1, email?.trim() || null],
   );
   return rows;
 }

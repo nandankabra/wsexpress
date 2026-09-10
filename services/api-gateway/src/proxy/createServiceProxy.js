@@ -13,8 +13,9 @@ const TIMEOUT_MS = Number(process.env.PROXY_TIMEOUT_MS) || 5000;
  * be restored.
  */
 function createServiceProxy(target, serviceName, mountPath) {
+  const normalizedTarget = target && !/^https?:\/\//i.test(target) ? `http://${target}` : target;
   return createProxyMiddleware({
-    target,
+    target: normalizedTarget,
     changeOrigin: true,
     timeout: TIMEOUT_MS,
     proxyTimeout: TIMEOUT_MS,

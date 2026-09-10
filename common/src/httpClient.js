@@ -12,7 +12,8 @@ const DEFAULT_RETRIES = Number(process.env.OUTBOUND_RETRIES) || 3;
  * after repeated failures and short-circuits with 503 until it recovers.
  */
 function createServiceClient({ baseURL, name, timeout = DEFAULT_TIMEOUT_MS, fallback } = {}) {
-  const instance = axios.create({ baseURL, timeout });
+  const normalizedBaseURL = baseURL && !/^https?:\/\//i.test(baseURL) ? `http://${baseURL}` : baseURL;
+  const instance = axios.create({ baseURL: normalizedBaseURL, timeout });
 
   axiosRetry(instance, {
     retries: DEFAULT_RETRIES,

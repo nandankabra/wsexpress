@@ -7,12 +7,13 @@ const { rateLimiter } = require('./rateLimiter');
 const { idempotency } = require('./idempotency');
 const { validate, ajv } = require('./validate');
 const { etag, computeEtag } = require('./etag');
-const { encodeCursor, decodeCursor, paginate } = require('./pagination');
+const { encodeCursor, decodeCursor, paginate, paginationLinker } = require('./pagination');
 const { contentNegotiation } = require('./contentNegotiation');
 const { cacheControl } = require('./cacheControl');
 const { createServiceClient } = require('./httpClient');
 const { swaggerDocs } = require('./swaggerDocs');
 const { createBaseApp } = require('./baseApp');
+const { assertProductionConfig } = require('./runtimeConfig');
 
 module.exports = {
   ApiError,
@@ -32,9 +33,11 @@ module.exports = {
   encodeCursor,
   decodeCursor,
   paginate,
+  paginationLinker,
   contentNegotiation,
   cacheControl,
   createServiceClient,
   swaggerDocs,
   createBaseApp,
+  assertProductionConfig,
 };

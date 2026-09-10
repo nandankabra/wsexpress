@@ -1,11 +1,13 @@
 require('dotenv').config();
 const { buildApp, SERVICE_NAME } = require('./app');
+const { assertProductionConfig } = require('@shiptrack/common');
 const { migrate } = require('./db/migrate');
 const { seedAdmin } = require('./db/seed');
 
 const PORT = process.env.PORT || 8001;
 
 async function start() {
+  assertProductionConfig({ requireAdmin: true });
   await migrate();
   await seedAdmin();
   const app = buildApp();

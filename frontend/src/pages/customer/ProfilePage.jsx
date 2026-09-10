@@ -1,68 +1,70 @@
-import { useEffect, useState } from 'react';
-import { getMyProfile, upsertMyProfile } from '../../api/customers';
-
-const EMPTY = {
-  fullName: '', email: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: '', postalCode: '', country: '',
-};
+import { useAuth } from '../../context/AuthContext';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/Card';
+import { Badge } from '../../components/ui/Badge';
+import { User, Mail, Shield } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function ProfilePage() {
-  const [form, setForm] = useState(EMPTY);
-  const [message, setMessage] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
-  useEffect(() => {
-    getMyProfile()
-      .then((p) => setForm({ ...EMPTY, ...p }))
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  function update(field) {
-    return (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
-  }
-
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError(null);
-    setMessage(null);
-    try {
-      await upsertMyProfile(form);
-      setMessage('Profile saved.');
-    } catch (err) {
-      setError(err.response?.data?.error?.message || 'Could not save profile');
-    }
-  }
-
-  if (loading) return <p className="p-8 text-slate-500">Loading...</p>;
-
-  const fields = [
-    ['fullName', 'Full name'], ['email', 'Email'], ['phone', 'Phone'],
-    ['addressLine1', 'Address line 1'], ['addressLine2', 'Address line 2'],
-    ['city', 'City'], ['state', 'State'], ['postalCode', 'Postal code'], ['country', 'Country'],
-  ];
+  if (!user) return null;
 
   return (
-    <div className="mx-auto max-w-lg px-4 py-8">
-      <h1 className="text-2xl font-bold text-slate-900">My Profile</h1>
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        {fields.map(([key, label]) => (
-          <div key={key}>
-            <label className="block text-sm font-medium text-slate-700">{label}</label>
-            <input
-              value={form[key] || ''}
-              onChange={update(key)}
-              required={key === 'fullName' || key === 'email'}
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
-        ))}
-        {message && <p className="text-sm text-green-600">{message}</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button type="submit" className="rounded-md bg-brand-600 px-5 py-2 font-medium text-white hover:bg-brand-700">
-          Save Profile
-        </button>
-      </form>
+    <div className="max-w-3xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Your Profile</h1>
+        <p className="text-sm text-zinc-500 mt-1">Manage your account settings and preferences.</p>
+      </div>
+
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+            <CardDescription>Your identity and contact details.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100 text-indigo-700">
+                <span className="text-2xl font-bold">{user.name.charAt(0).toUpperCase()}</span>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-zinc-900">{user.name}</h3>
+                <Badge variant="primary" className="mt-1">{user.role}</Badge>
+              </div>
+            </div>
+
+            <div className="grid gap-6 sm:grid-cols-2 pt-4 border-t border-border">
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-zinc-900 mb-1">
+                  <User className="h-4 w-4 text-zinc-400" />
+                  Full Name
+                </div>
+                <p className="text-zinc-600">{user.name}</p>
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-zinc-900 mb-1">
+                  <Mail className="h-4 w-4 text-zinc-400" />
+                  Email Address
+                </div>
+                <p className="text-zinc-600">{user.email}</p>
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-2 text-sm font-medium text-zinc-900 mb-1">
+                  <Shield className="h-4 w-4 text-zinc-400" />
+                  Account Status
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={user.isActive ? 'success' : 'danger'}>
+                    {user.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
 }

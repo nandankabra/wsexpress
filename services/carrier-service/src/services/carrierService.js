@@ -22,6 +22,11 @@ async function upsertCarrier(userId, data) {
   return toResponse(row);
 }
 
+async function createCarrierProfile(data) {
+  const row = await carrierModel.upsert(data.userId, data);
+  return toResponse(row);
+}
+
 async function getCarrier(userId) {
   const row = await carrierModel.findByUserId(userId);
   if (!row) throw ApiError.notFound('Carrier profile not found');
@@ -39,11 +44,11 @@ async function verifyCarrier(userId, isVerified, correlationId) {
   return toResponse(row);
 }
 
-async function listCarriers({ cursor, limit = 20 }) {
+async function listCarriers({ cursor, limit = 20, email }) {
   const after = decodeCursor(cursor);
-  const rows = await carrierModel.listPage({ limit, afterUserId: after ? after.userId : null });
+  const rows = await carrierModel.listPage({ limit, afterUserId: after ? after.userId : null, email });
   const result = paginate(rows, limit, (row) => ({ userId: row.user_id }));
   return { data: result.data.map(toResponse), pagination: result.pagination };
 }
 
-module.exports = { upsertCarrier, getCarrier, verifyCarrier, listCarriers, toResponse };
+module.exports = { upsertCarrier, createCarrierProfile, getCarrier, verifyCarrier, listCarriers, toResponse };

@@ -16,6 +16,14 @@ async function putMe(req, res, next) {
   }
 }
 
+async function createProfile(req, res, next) {
+  try {
+    res.status(201).json(await carrierService.createCarrierProfile(req.body));
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function getById(req, res, next) {
   try {
     res.status(200).json(await carrierService.getCarrier(req.params.userId));
@@ -35,10 +43,10 @@ async function verify(req, res, next) {
 async function list(req, res, next) {
   try {
     const limit = Math.min(Number(req.query.limit) || 20, 100);
-    res.status(200).json(await carrierService.listCarriers({ cursor: req.query.cursor, limit }));
+    res.status(200).json(await carrierService.listCarriers({ cursor: req.query.cursor, limit, email: req.query.email }));
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { getMe, putMe, getById, verify, list };
+module.exports = { getMe, putMe, createProfile, getById, verify, list };

@@ -13,9 +13,6 @@ function decodeCursor(cursor) {
 
 /**
  * Builds a cursor-paginated response envelope.
- * @param {Array} items - one extra item beyond `limit` fetched by the caller, used to detect hasMore
- * @param {number} limit
- * @param {(item: any) => any} cursorFor - extracts the cursor payload (e.g. { id, createdAt }) from an item
  */
 function paginate(items, limit, cursorFor) {
   const hasMore = items.length > limit;
@@ -30,4 +27,27 @@ function paginate(items, limit, cursorFor) {
   };
 }
 
-module.exports = { encodeCursor, decodeCursor, paginate };
+/**
+ * Express middleware that intercepts JSON responses and adds a HATEOAS `next` link
+ * to any payload that contains `pagination.nextCursor`.
+ */
+function paginationLinker(req, res, next) {
+  const originalJson = res.json.bind(res);
+  res.json = (body) => {
+    if (body && body.pagination && body.pagination.nextCursor) {
+      try {
+        const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+        const host = req.headers['x-forwarded-host'] || req.headers.host;
+        const url = new URL(req.originalUrl, `${protocol}://${host}`);
+        url.searchParams.set('cursor', body.pagination.nextCursor);
+        body.pagination.next = url.pathname + url.search;
+      } catch (err) {
+        // ignore malformed URLs, shouldn't fail the response
+      }
+    }
+    return originalJson(body);
+  };
+  next();
+}
+
+module.exports = { encodeCursor, decodeCursor, paginate, paginationLinker };

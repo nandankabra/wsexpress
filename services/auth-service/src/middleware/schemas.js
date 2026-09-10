@@ -40,4 +40,34 @@ const refreshSchema = {
   },
 };
 
-module.exports = { registerSchema, adminCreateAccountSchema, loginSchema, refreshSchema };
+const verifyEmailSchema = {
+  type: 'object',
+  required: ['email', 'otp'],
+  additionalProperties: false,
+  properties: {
+    email: { type: 'string', format: 'email' },
+    otp: { type: 'string', minLength: 6, maxLength: 6 },
+  },
+};
+
+const forgotPasswordSchema = {
+  type: 'object',
+  required: ['email'],
+  additionalProperties: false,
+  properties: {
+    email: { type: 'string', format: 'email' },
+  },
+};
+
+const resetPasswordSchema = {
+  type: 'object',
+  required: ['email', 'otp', 'newPassword'],
+  additionalProperties: false,
+  properties: {
+    email: { type: 'string', format: 'email' },
+    otp: { type: 'string', minLength: 6, maxLength: 6 },
+    newPassword: { type: 'string', minLength: 8, maxLength: 72 },
+  },
+};
+
+module.exports = { registerSchema, adminCreateAccountSchema, loginSchema, refreshSchema, verifyEmailSchema, forgotPasswordSchema, resetPasswordSchema };

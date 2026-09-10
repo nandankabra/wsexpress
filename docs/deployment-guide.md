@@ -19,6 +19,10 @@ docker compose up -d --build
 docker compose ps          # wait until everything shows "healthy"
 ```
 
+Compose defaults to `NODE_ENV=development` so local demo secrets and simulated email remain
+available. Production containers must set `NODE_ENV=production`, strong JWT secrets, an explicit
+`CORS_ORIGIN`, real admin credentials, and SMTP settings.
+
 Once healthy:
 - Frontend: http://localhost:3001
 - API Gateway: http://localhost:18000 (Swagger at http://localhost:18000/api-docs)
@@ -76,12 +80,11 @@ frontend as Docker web services, plus a managed PostgreSQL database.
    two generated values into every other service's env vars (Render's blueprint spec doesn't
    support sharing one generated value across services) - **they must be identical everywhere**,
    since auth-service signs tokens that every other service verifies.
-5. **Frontend note**: `frontend/nginx.conf` proxies `/api/v1` and `/graphql` to
-   `http://api-gateway:8000`, which only resolves inside the Docker Compose network. On Render,
-   update `nginx.conf`'s `proxy_pass` targets to the deployed API Gateway's public
-   `https://shiptrack-api-gateway.onrender.com` URL before building the frontend service (or
-   template it at container start via `envsubst`).
-6. Redeploy the frontend after step 5, then visit its Render URL.
+5. **Frontend API proxy**: set the Render frontend environment variable `API_GATEWAY_URL` to
+  the deployed API Gateway's public URL, for example
+  `https://shiptrack-api-gateway.onrender.com`. The frontend Nginx container applies this value
+  at startup for both `/api/v1` and `/graphql`; no source edit is required.
+6. Redeploy the frontend after setting `API_GATEWAY_URL`, then visit its Render URL.
 
 ## 3. Configuration Reference
 

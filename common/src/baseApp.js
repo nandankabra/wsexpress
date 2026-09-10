@@ -3,6 +3,8 @@ const helmet = require('helmet');
 const cors = require('cors');
 const { correlationId } = require('./correlationId');
 const { createLogger, requestLogger } = require('./logger');
+const { paginationLinker } = require('./pagination');
+const { assertProductionConfig } = require('./runtimeConfig');
 
 /**
  * Wires the cross-cutting middleware every ShipTrack service needs, in the order that
@@ -11,16 +13,26 @@ const { createLogger, requestLogger } = require('./logger');
  * per-router by each service since they don't apply uniformly to every endpoint.
  */
 function createBaseApp(serviceName) {
+  assertProductionConfig();
   const app = express();
   const logger = createLogger(serviceName);
+  const allowedOrigins = (process.env.CORS_ORIGIN || '*')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
 
   app.disable('x-powered-by');
   app.use(helmet());
-  app.use(cors());
+  app.use(cors({
+    origin: allowedOrigins.includes('*')
+      ? true
+      : (origin, callback) => callback(null, !origin || allowedOrigins.includes(origin)),
+  }));
   app.use(correlationId);
   app.use(requestLogger(logger));
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true }));
+  app.use(paginationLinker);
 
   app.get(['/health', '/healthz'], (req, res) => {
     res.json({ status: 'UP', service: serviceName, timestamp: new Date().toISOString() });
