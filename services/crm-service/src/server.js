@@ -5,11 +5,11 @@ const { connect } = require('./db/connection');
 const PORT = process.env.PORT || 8008;
 
 async function start() {
-  await connect();
   const app = buildApp();
   app.listen(PORT, () => {
     console.log(`[${SERVICE_NAME}] listening on port ${PORT}`);
   });
+  await connect();
 }
 
 start().catch((err) => {
