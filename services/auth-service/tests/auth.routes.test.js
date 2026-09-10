@@ -7,6 +7,7 @@ jest.mock('../src/models/refreshTokenModel');
 jest.mock('../src/models/verificationTokenModel');
 jest.mock('../src/clients/crmClient');
 jest.mock('../src/clients/notificationClient');
+jest.mock('../src/services/mailer');
 
 const request = require('supertest');
 const userModel = require('../src/models/userModel');
@@ -14,6 +15,7 @@ const refreshTokenModel = require('../src/models/refreshTokenModel');
 const verificationTokenModel = require('../src/models/verificationTokenModel');
 const crmClient = require('../src/clients/crmClient');
 const notificationClient = require('../src/clients/notificationClient');
+const mailer = require('../src/services/mailer');
 const { buildApp } = require('../src/app');
 
 const app = buildApp();
@@ -42,7 +44,7 @@ describe('POST /api/v1/auth/register', () => {
     userModel.findByEmail.mockResolvedValue(null);
     userModel.create.mockResolvedValue({ ...existingUser, id: 'new-id', is_verified: false });
     verificationTokenModel.createToken.mockResolvedValue();
-    notificationClient.sendNotification.mockResolvedValue();
+    mailer.sendVerificationEmail.mockResolvedValue();
     crmClient.recordEvent.mockResolvedValue(null);
 
     const res = await request(app)
@@ -56,9 +58,10 @@ describe('POST /api/v1/auth/register', () => {
       expect.objectContaining({ email: 'grace@example.com', role: 'CUSTOMER', isVerified: false }),
     );
     expect(verificationTokenModel.createToken).toHaveBeenCalled();
-    expect(notificationClient.sendNotification).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'EMAIL_VERIFICATION', to: 'grace@example.com' }),
-      expect.anything()
+    expect(mailer.sendVerificationEmail).toHaveBeenCalledWith(
+      'grace@example.com',
+      expect.any(String),
+      expect.any(String),
     );
     expect(crmClient.recordEvent).toHaveBeenCalledWith(
       'CUSTOMER_REGISTERED',
