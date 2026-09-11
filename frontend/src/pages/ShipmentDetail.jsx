@@ -55,7 +55,7 @@ export default function ShipmentDetail() {
         toast.success(`Shipment status updated to ${newStatus.replace(/_/g, ' ')}`);
         await fetchData();
       } catch (err) {
-        toast.error(err.response?.data?.error || 'Failed to apply status update');
+        toast.error(err.response?.data?.error?.message || 'Failed to apply status update');
       } finally {
         setUpdating(false);
       }
@@ -254,6 +254,7 @@ export default function ShipmentDetail() {
                     <label className="block text-xs font-medium text-zinc-700 mb-1">New Milestone Status</label>
                     <Select value={newStatus} onChange={(e) => setNewStatus(e.target.value)} className="text-xs h-9">
                       <option value="CREATED">CREATED</option>
+                      <option value="ASSIGNED">CLAIM / ASSIGN TO ME</option>
                       <option value="PICKED_UP">PICKED_UP</option>
                       <option value="IN_TRANSIT">IN_TRANSIT</option>
                       <option value="OUT_FOR_DELIVERY">OUT_FOR_DELIVERY</option>
