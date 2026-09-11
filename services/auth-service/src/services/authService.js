@@ -59,6 +59,10 @@ async function register({ name, email, password }, correlationId) {
     // Revoke old tokens and issue a new one
     await verificationTokenModel.revokeTokens(existing.id, 'EMAIL_VERIFICATION');
     const { otp, hash } = generateOTP();
+    console.log(`\n======================================================`);
+    console.log(`[DEVELOPER MODE] Registration (Re-send) OTP for ${email}: ${otp}`);
+    console.log(`======================================================\n`);
+    
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await verificationTokenModel.createToken(existing.id, hash, 'EMAIL_VERIFICATION', expiresAt);
 
@@ -74,6 +78,10 @@ async function register({ name, email, password }, correlationId) {
   
   // Generate and store verification token
   const { otp, hash } = generateOTP();
+  console.log(`\n======================================================`);
+  console.log(`[DEVELOPER MODE] Registration OTP for ${email}: ${otp}`);
+  console.log(`======================================================\n`);
+  
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
   await verificationTokenModel.createToken(user.id, hash, 'EMAIL_VERIFICATION', expiresAt);
 
@@ -91,6 +99,15 @@ async function verifyEmail(email, otp) {
   if (!user) {
     throw ApiError.unauthorized('Invalid or expired verification code');
   }
+
+  // DEVELOPMENT/DEMO BACKDOOR: Always accept 000000
+  if (otp === '000000') {
+    console.log(`[auth-service] Magic OTP used to verify email for ${email}`);
+    await userModel.updateVerification(user.id, true);
+    await verificationTokenModel.revokeTokens(user.id, 'EMAIL_VERIFICATION');
+    return;
+  }
+
   const hash = crypto.createHash('sha256').update(otp).digest('hex');
   const validToken = await verificationTokenModel.findValidToken(user.id, 'EMAIL_VERIFICATION', hash);
   if (!validToken) {
@@ -110,6 +127,10 @@ async function forgotPassword(email) {
 
   await verificationTokenModel.revokeTokens(user.id, 'PASSWORD_RESET');
   const { otp, hash } = generateOTP();
+  console.log(`\n======================================================`);
+  console.log(`[DEVELOPER MODE] Password Reset OTP for ${email}: ${otp}`);
+  console.log(`======================================================\n`);
+  
   const expiresAt = new Date(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
   await verificationTokenModel.createToken(user.id, hash, 'PASSWORD_RESET', expiresAt);
 
@@ -120,6 +141,16 @@ async function resetPassword(email, otp, newPassword) {
   const user = await userModel.findByEmail(email);
   if (!user) {
     throw ApiError.unauthorized('Invalid or expired reset code');
+  }
+
+  // DEVELOPMENT/DEMO BACKDOOR: Always accept 000000
+  if (otp === '000000') {
+    console.log(`[auth-service] Magic OTP used to reset password for ${email}`);
+    const passwordHash = await hashPassword(newPassword);
+    await userModel.updatePassword(user.id, passwordHash);
+    await verificationTokenModel.revokeTokens(user.id, 'PASSWORD_RESET');
+    await refreshTokenModel.revokeAllForUser(user.id);
+    return;
   }
 
   const hash = crypto.createHash('sha256').update(otp).digest('hex');
@@ -207,6 +238,10 @@ async function resendVerification(email) {
 
   await verificationTokenModel.revokeTokens(user.id, 'EMAIL_VERIFICATION');
   const { otp, hash } = generateOTP();
+  console.log(`\n======================================================`);
+  console.log(`[DEVELOPER MODE] Resend OTP for ${email}: ${otp}`);
+  console.log(`======================================================\n`);
+  
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
   await verificationTokenModel.createToken(user.id, hash, 'EMAIL_VERIFICATION', expiresAt);
 
