@@ -24,3 +24,4 @@ frontend/dist/
 
 # Docker volumes data (if any bind mounts land here)
 infra/**/data/
+.data/

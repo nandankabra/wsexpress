@@ -1,17 +1,40 @@
-const mysql = require('mysql2/promise');
+const path = require('path');
+const { createSqliteAdapter } = require('./sqliteAdapter');
 
-const connectionUri = process.env.MYSQL_URL || process.env.DATABASE_URL;
+const connectionUri = process.env.MYSQL_URL;
+let activePool = null;
 
-const pool = connectionUri
-  ? mysql.createPool(connectionUri)
-  : mysql.createPool({
-      host: process.env.MYSQL_HOST,
-      port: Number(process.env.MYSQL_PORT) || 3306,
-      user: process.env.MYSQL_USER,
-      password: process.env.MYSQL_PASSWORD,
-      database: process.env.MYSQL_DATABASE,
-      waitForConnections: true,
-      connectionLimit: 10,
-    });
+async function getPool() {
+  if (activePool) return activePool;
+
+  if (connectionUri && connectionUri.startsWith('mysql://')) {
+    try {
+      const mysql = require('mysql2/promise');
+      const testPool = mysql.createPool(connectionUri);
+
+      // Verify connection with a short timeout
+      await Promise.race([
+        testPool.query('SELECT 1'),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('MySQL connection timeout')), 3000)),
+      ]);
+
+      activePool = testPool;
+      return activePool;
+    } catch (err) {
+      console.warn(`[location-service] Notice: MySQL unavailable (${err.message}). Falling back to local SQLite database.`);
+    }
+  }
+
+  const dbPath = path.resolve(__dirname, '../../../../.data/location.db');
+  activePool = createSqliteAdapter(dbPath);
+  return activePool;
+}
+
+const pool = {
+  async query(sql, params) {
+    const p = await getPool();
+    return p.query(sql, params);
+  },
+};
 
 module.exports = { pool };

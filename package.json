@@ -10,7 +10,10 @@
   ],
   "scripts": {
     "test": "npm test --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "start:backend": "node scripts/start-all.js",
+    "test:flows": "node scripts/check-flows.js",
+    "dev": "npm run dev --workspace=frontend"
   },
   "engines": {
     "node": ">=20"
