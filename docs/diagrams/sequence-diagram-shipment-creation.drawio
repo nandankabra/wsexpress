@@ -1,0 +1,121 @@
+<mxfile host="app.diagrams.net" version="24.0.0">
+  <diagram name="Scenario 1: Shipment Creation & Dynamic Pricing" id="ShipTrack-Seq-1">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1650" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Lifelines -->
+        <mxCell id="ll_customer" value="Customer (Browser)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="40" width="140" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_gateway" value="API Gateway (:8000)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="280" y="40" width="140" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_shipment" value="Shipment Service (:8004)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="150" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_pricing" value="Pricing Service (:8006)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="730" y="40" width="140" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_location" value="Location Service SOAP (:8007)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="950" y="40" width="180" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_tracking" value="Tracking Service (:8005)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1200" y="40" width="150" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_crm" value="CRM Service (:8008)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1420" y="40" width="140" height="900" as="geometry" />
+        </mxCell>
+
+        <!-- Alt Frame 1: Auth -->
+        <mxCell id="alt_auth" value="alt [JWT Auth Validation]" style="shape=umlFrame;whiteSpace=wrap;html=1;width=160;height=30;fillColor=none;strokeColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="420" height="150" as="geometry" />
+        </mxCell>
+
+        <!-- Messages -->
+        <mxCell id="m1" value="1. POST /api/v1/shipments (JWT, Idempotency-Key)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="130" y="130" as="sourcePoint" />
+            <mxPoint x="350" y="130" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m1_err" value="401 Unauthorized / 429 Rate Limited" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="350" y="170" as="sourcePoint" />
+            <mxPoint x="130" y="170" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="m2" value="2. POST /api/v1/shipments (X-Correlation-Id)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="350" y="240" as="sourcePoint" />
+            <mxPoint x="575" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="m3" value="3. POST /api/v1/pricing/quote" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="290" as="sourcePoint" />
+            <mxPoint x="800" y="290" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Alt Frame 2: SOAP Fallback -->
+        <mxCell id="alt_soap" value="alt [SOAP GetCountryInfo WSDL Integration]" style="shape=umlFrame;whiteSpace=wrap;html=1;width=240;height=30;fillColor=none;strokeColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="710" y="320" width="380" height="220" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m4" value="4. SOAP GetCountryInfo(destCountry)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="800" y="360" as="sourcePoint" />
+            <mxPoint x="1040" y="360" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4_res" value="200 OK (XML: currency, taxRate)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1040" y="400" as="sourcePoint" />
+            <mxPoint x="800" y="400" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="m5_fallback" value="[Fallback] Default to USD pricing on SOAP Timeout" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="750" y="480" width="300" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m6" value="5. 200 OK { priceAmount, currency, estimatedDays }" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="800" y="580" as="sourcePoint" />
+            <mxPoint x="575" y="580" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Par Frame: Async Logging -->
+        <mxCell id="par_logging" value="par [Best-Effort Async Event Logging to MongoDB]" style="shape=umlFrame;whiteSpace=wrap;html=1;width=280;height=30;fillColor=none;strokeColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="640" width="970" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m7" value="6. POST /api/v1/tracking/STK89F2A/events { status: CREATED }" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="680" as="sourcePoint" />
+            <mxPoint x="1275" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m8" value="7. POST /api/v1/crm/events { event: SHIPMENT_CREATED }" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="750" as="sourcePoint" />
+            <mxPoint x="1490" y="750" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="m9" value="8. 201 Created { id, trackingId: STK89F2A, status: CREATED }" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="850" as="sourcePoint" />
+            <mxPoint x="130" y="850" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

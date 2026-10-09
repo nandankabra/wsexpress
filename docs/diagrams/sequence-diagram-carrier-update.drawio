@@ -1,0 +1,102 @@
+<mxfile host="app.diagrams.net" version="24.0.0">
+  <diagram name="Scenario 2: Carrier Status Update & Notifications" id="ShipTrack-Seq-2">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1650" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Lifelines -->
+        <mxCell id="ll_carrier" value="Carrier (Driver/App)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="40" width="140" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_gateway" value="API Gateway (:8000)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="280" y="40" width="140" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_shipment" value="Shipment Service (:8004)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="150" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_tracking" value="Tracking Service (:8005)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="750" y="40" width="150" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_notif" value="Notification Service (:8010)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="40" width="160" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_crm" value="CRM Service (:8008)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="40" width="140" height="900" as="geometry" />
+        </mxCell>
+
+        <!-- Message 1 -->
+        <mxCell id="m1" value="1. PATCH /api/v1/shipments/101/status { status: DELIVERED, expectedVersion: 2 }" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="130" y="120" as="sourcePoint" />
+            <mxPoint x="350" y="120" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m2" value="2. Forward with Carrier Role authorization" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="350" y="160" as="sourcePoint" />
+            <mxPoint x="575" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Alt Frame 1: State Machine Transition Check -->
+        <mxCell id="alt_state" value="alt [State Machine Transition Validation Check]" style="shape=umlFrame;whiteSpace=wrap;html=1;width=240;height=30;fillColor=none;strokeColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="570" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="err_422" value="422 Unprocessable Entity (Invalid transition from CREATED to DELIVERED)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="260" as="sourcePoint" />
+            <mxPoint x="130" y="260" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Alt Frame 2: OCC Check -->
+        <mxCell id="alt_occ" value="alt [Optimistic Concurrency Control (expectedVersion Check)]" style="shape=umlFrame;whiteSpace=wrap;html=1;width=310;height=30;fillColor=none;strokeColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="40" y="380" width="570" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="err_412" value="412 Precondition Failed (Version mismatch: row version changed)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="440" as="sourcePoint" />
+            <mxPoint x="130" y="440" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- DB Update & Tracking -->
+        <mxCell id="m3" value="3. Update Postgres (status='DELIVERED', version=3)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="560" as="sourcePoint" />
+            <mxPoint x="825" y="560" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Loop Frame: Subscriber Fan-Out -->
+        <mxCell id="loop_fanout" value="loop [Iterate Event Subscribers / Handlers]" style="shape=umlFrame;whiteSpace=wrap;html=1;width=230;height=30;fillColor=none;strokeColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="600" width="820" height="180" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m4_email" value="4. POST /api/v1/notifications/send-email { to: customerEmail }" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="650" as="sourcePoint" />
+            <mxPoint x="1080" y="650" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m5_crm" value="5. POST /api/v1/crm/events { event: SHIPMENT_DELIVERED }" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="720" as="sourcePoint" />
+            <mxPoint x="1320" y="720" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="res_200" value="6. 200 OK { id: 101, status: DELIVERED, version: 3 }" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="820" as="sourcePoint" />
+            <mxPoint x="130" y="820" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

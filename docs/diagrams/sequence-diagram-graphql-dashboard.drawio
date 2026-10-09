@@ -1,0 +1,96 @@
+<mxfile host="app.diagrams.net" version="24.0.0">
+  <diagram name="Scenario 3: GraphQL Dashboard Aggregation & Circuit Breaker" id="ShipTrack-Seq-3">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1650" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Lifelines -->
+        <mxCell id="ll_customer" value="Customer (Browser)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="60" y="40" width="140" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_gateway" value="API Gateway (:8000)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="280" y="40" width="140" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_gql" value="GraphQL Service (:8011)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="500" y="40" width="150" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_user" value="User Service (:8002)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="750" y="40" width="140" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_shipment" value="Shipment Service (:8004)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="980" y="40" width="150" height="900" as="geometry" />
+        </mxCell>
+        <mxCell id="ll_tracking" value="Tracking Service (:8005)" style="shape=umlLifeline;perimeter=lifelinePerimeter;whiteSpace=wrap;html=1;container=1;collapsible=0;recursiveResize=0;outlineConnect=0;size=40;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="40" width="150" height="900" as="geometry" />
+        </mxCell>
+
+        <!-- Message 1 -->
+        <mxCell id="m1" value="1. POST /graphql (Query: myDashboard { profile, recentShipments })" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="130" y="120" as="sourcePoint" />
+            <mxPoint x="350" y="120" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m2" value="2. Forward GraphQL Query (X-Correlation-Id)" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="350" y="160" as="sourcePoint" />
+            <mxPoint x="575" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Par Frame: Parallel Data Fetch -->
+        <mxCell id="par_fetch" value="par [Parallel Microservice Data Fetching via Promise.all()]" style="shape=umlFrame;whiteSpace=wrap;html=1;width=310;height=30;fillColor=none;strokeColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="200" width="530" height="170" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m3_user" value="3. GET /api/v1/users/me" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="240" as="sourcePoint" />
+            <mxPoint x="820" y="240" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m4_shipment" value="4. GET /api/v1/shipments?limit=5" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="310" as="sourcePoint" />
+            <mxPoint x="1055" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Loop Frame: Iterate Active Shipments -->
+        <mxCell id="loop_shipments" value="loop [For Each Active Shipment in recentShipments List]" style="shape=umlFrame;whiteSpace=wrap;html=1;width=300;height=30;fillColor=none;strokeColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="540" y="400" width="770" height="320" as="geometry" />
+        </mxCell>
+
+        <!-- Alt Frame: Circuit Breaker States -->
+        <mxCell id="alt_cb" value="alt [Opossum Circuit Breaker &amp; Exponential Backoff Retry]" style="shape=umlFrame;whiteSpace=wrap;html=1;width=330;height=30;fillColor=none;strokeColor=#333333;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="440" width="730" height="260" as="geometry" />
+        </mxCell>
+
+        <mxCell id="m5_healthy" value="Case 1 (Healthy): GET /api/v1/tracking/STK89F2A/events -> 200 OK" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="480" as="sourcePoint" />
+            <mxPoint x="1295" y="480" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m6_retry" value="Case 2 (Transient 5xx Error): Axios Exponential Retry (Attempt 2) -> 200 OK" style="html=1;verticalAlign=bottom;endArrow=block;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="550" as="sourcePoint" />
+            <mxPoint x="1295" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="m7_fallback" value="Case 3 (Service Down / Circuit Open): Fallback returns status='UNAVAILABLE'" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="600" y="620" width="450" height="30" as="geometry" />
+        </mxCell>
+
+        <mxCell id="res_gql" value="5. 200 OK (Unified GraphQL JSON Result: Profile + Active Shipments)" style="html=1;verticalAlign=bottom;endArrow=open;dashed=1;endSize=8;edgeStyle=elbowEdgeStyle;elbow=vertical;curved=0;rounded=0;" edge="1" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="575" y="770" as="sourcePoint" />
+            <mxPoint x="130" y="770" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

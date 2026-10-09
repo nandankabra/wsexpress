@@ -28,8 +28,8 @@ until docker info >/dev/null 2>&1; do sleep 3; done
 cd "/Users/nandankabra/Desktop/IIIT /sem 3 /webservices/shipment1212"
 
 cp .env.example .env          # first time only — skip if .env already exists
-docker compose up -d --build  # first run; use `docker compose up -d` afterwards
-docker compose ps             # wait until all 16 containers report "healthy"
+cp .env.example .env    # first run; use `docker compose up -d` afterwards
+cp .env.example .env              # wait until all 16 containers report "healthy"
 ```
 
 First boot takes a few minutes (image builds + DB init + admin seeding).
