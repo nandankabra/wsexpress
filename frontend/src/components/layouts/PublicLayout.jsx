@@ -17,6 +17,12 @@ export default function PublicLayout() {
           
           <nav className="flex items-center space-x-3 sm:space-x-4">
             <Link
+              to="/services"
+              className="text-xs font-semibold text-zinc-600 hover:text-zinc-900 transition-colors flex items-center gap-1 py-1.5 px-2.5 rounded-lg hover:bg-zinc-100"
+            >
+              <span>Services</span>
+            </Link>
+            <Link
               to="/track"
               className="text-xs font-semibold text-zinc-600 hover:text-zinc-900 transition-colors flex items-center gap-1 py-1.5 px-2.5 rounded-lg hover:bg-zinc-100"
             >

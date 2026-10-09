@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getShipment, updateShipmentStatus, downloadLabel, downloadInvoice } from '../api/shipments';
+import { listTrackingEvents } from '../api/tracking';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -10,6 +11,7 @@ import { Select } from '../components/ui/Select';
 import { Input } from '../components/ui/Input';
 import { MapPin, Package, ArrowLeft, Clock, Truck, CheckCircle2, AlertCircle, FileText, Download } from 'lucide-react';
 import { toast } from 'sonner';
+import TrackingMap from '../components/TrackingMap';
 
 export default function ShipmentDetail() {
   const { id } = useParams();
@@ -29,6 +31,14 @@ export default function ShipmentDetail() {
   async function fetchData() {
     try {
       const data = await getShipment(id);
+      if (data?.trackingId) {
+        try {
+          const eventsRes = await listTrackingEvents(data.trackingId);
+          data.events = Array.isArray(eventsRes?.data) ? eventsRes.data : (Array.isArray(eventsRes) ? eventsRes : []);
+        } catch (e) {
+          data.events = [];
+        }
+      }
       setShipment(data);
       setNewStatus(data.status);
     } catch (err) {
@@ -176,6 +186,11 @@ export default function ShipmentDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent>
+              {shipment.events && shipment.events.some((e) => e.lat && e.lng) && (
+                <div className="mb-6">
+                  <TrackingMap events={shipment.events} />
+                </div>
+              )}
               {(!shipment.events || shipment.events.length === 0) ? (
                 <div className="text-center py-8 text-xs text-zinc-500">
                   <p>Initial shipment manifest created.</p>

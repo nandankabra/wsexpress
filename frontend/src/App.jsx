@@ -12,6 +12,7 @@ import RegisterPage from './pages/public/RegisterPage';
 import VerifyEmail from './pages/public/VerifyEmail';
 import ForgotPassword from './pages/public/ForgotPassword';
 import ResetPassword from './pages/public/ResetPassword';
+import ServicesPage from './pages/public/ServicesPage';
 
 import CustomerDashboard from './pages/customer/CustomerDashboard';
 import CreateShipment from './pages/customer/CreateShipment';
@@ -39,6 +40,7 @@ export default function App() {
           {/* Public Routes with PublicLayout */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/services" element={<ServicesPage />} />
             <Route path="/track" element={<TrackPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />

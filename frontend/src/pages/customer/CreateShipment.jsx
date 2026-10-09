@@ -22,7 +22,23 @@ export default function CreateShipment() {
   const [idempotencyKey, setIdempotencyKey] = useState(() => crypto.randomUUID());
 
   function buildPayload() {
-    return { origin, destination, weightKg: Number(weightKg), packageType };
+    return {
+      origin,
+      destination,
+      weightKg: Number(weightKg),
+      packageType,
+      ...(quote
+        ? {
+            quotedPrice: quote.priceAmount,
+            baseFare: quote.baseFare,
+            distanceCharge: quote.distanceCharge,
+            weightCharge: quote.weightCharge,
+            taxAmount: quote.taxAmount,
+            totalAmount: quote.totalAmount || quote.priceAmount,
+            currency: quote.currency,
+          }
+        : {}),
+    };
   }
 
   async function handleGetQuote(e) {
@@ -138,7 +154,8 @@ export default function CreateShipment() {
                     <div>
                       <p className="text-sm text-zinc-400">Total Price</p>
                       <p className="text-4xl font-bold mt-1">
-                        ${quote.priceAmount.toFixed(2)} <span className="text-lg text-zinc-500">{quote.currency}</span>
+                        {quote.currency === 'INR' ? '₹' : quote.currency === 'EUR' ? '€' : quote.currency === 'GBP' ? '£' : '$'}
+                        {Number(quote.priceAmount).toFixed(2)} <span className="text-lg text-zinc-500">{quote.currency}</span>
                       </p>
                     </div>
                     <div>

@@ -138,7 +138,7 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent className="space-y-2.5 text-xs">
             {[
-              { name: 'API Gateway Proxy', port: '18000', status: 'Healthy' },
+              { name: 'API Gateway Proxy', port: '8000', status: 'Healthy' },
               { name: 'Auth & JWT Token Vault', port: '8001', status: 'Healthy' },
               { name: 'Shipment & Quote Engine', port: '8004', status: 'Healthy' },
               { name: 'Location & Distance Matrix', port: '8007', status: 'Healthy' },

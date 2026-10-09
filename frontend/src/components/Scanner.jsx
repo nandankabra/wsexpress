@@ -24,7 +24,9 @@ export default function Scanner({ onScan, onError }) {
     );
 
     return () => {
-      scanner.clear().catch(console.error);
+      try {
+        scanner.clear().catch(() => {});
+      } catch (e) {}
     };
   }, [onScan, onError]);
 

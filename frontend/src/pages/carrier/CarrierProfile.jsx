@@ -45,7 +45,7 @@ export default function CarrierProfile() {
     event.preventDefault();
     setSaving(true);
     try {
-      const saved = await upsertCarrierProfile(form);
+      const saved = await upsertMyCarrierProfile(form);
       setProfile(saved);
       setForm({ ...EMPTY_FORM, ...saved });
       toast.success('Carrier profile saved');
