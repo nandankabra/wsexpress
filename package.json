@@ -9,7 +9,7 @@
     "frontend"
   ],
   "scripts": {
-    "test": "npm test --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "start:backend": "node scripts/start-all.js",
     "test:flows": "node scripts/check-flows.js",

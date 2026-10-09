@@ -25,7 +25,7 @@ jobs:
         run: npm ci
 
       - name: Run test suites (all workspaces)
-        run: npm test --workspaces --if-present
+        run: npm run test --workspaces --if-present
 
       - name: Build frontend
         run: npm run build --workspace=frontend

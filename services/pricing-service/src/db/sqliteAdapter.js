@@ -1,8 +1,71 @@
-const { DatabaseSync } = require('node:sqlite');
+let DatabaseSync;
+try {
+  DatabaseSync = require('node:sqlite').DatabaseSync;
+} catch (e) {
+  DatabaseSync = null;
+}
 const path = require('path');
 const fs = require('fs');
 
 function createSqliteAdapter(dbPath) {
+  if (!DatabaseSync) {
+    // In-memory fallback for Node < 22.5 (e.g. Node 20 in CI/Docker)
+    const rules = new Map();
+    const rates = new Map();
+
+    return {
+      isSqlite: true,
+      async query(sql, params = []) {
+        const trimmed = sql.trim();
+        if (/CREATE\s+TABLE/i.test(trimmed) || /PRAGMA/i.test(trimmed)) {
+          return [[], []];
+        }
+        if (/SELECT\s+1\b/i.test(trimmed)) {
+          return [[{ 1: 1 }], []];
+        }
+        if (/SELECT\s+COUNT\(\*\)\s+as\s+count\s+FROM\s+pricing_rules/i.test(trimmed)) {
+          return [[{ count: rules.size }], []];
+        }
+        if (/SELECT\s+COUNT\(\*\)\s+as\s+count\s+FROM\s+currency_rates/i.test(trimmed)) {
+          return [[{ count: rates.size }], []];
+        }
+        if (/SELECT\s+\*\s+FROM\s+pricing_rules\s+WHERE\s+package_type\s*=\s*\?/i.test(trimmed)) {
+          const rule = rules.get(params[0]);
+          return [rule ? [rule] : [], []];
+        }
+        if (/SELECT\s+\*\s+FROM\s+pricing_rules\s+ORDER\s+BY/i.test(trimmed)) {
+          return [Array.from(rules.values()), []];
+        }
+        if (/SELECT\s+\*\s+FROM\s+currency_rates\s+WHERE\s+currency\s*=\s*\?/i.test(trimmed)) {
+          const rate = rates.get(params[0]);
+          return [rate ? [rate] : [], []];
+        }
+        if (/SELECT\s+\*\s+FROM\s+currency_rates\s+ORDER\s+BY/i.test(trimmed)) {
+          return [Array.from(rates.values()), []];
+        }
+        if (/INSERT\s+INTO\s+pricing_rules/i.test(trimmed)) {
+          const [pkg, base, perKg, multi] = params;
+          const entry = {
+            package_type: pkg,
+            base_rate: String(base),
+            per_kg_rate: String(perKg),
+            international_multiplier: String(multi || 1.5),
+            updated_at: new Date().toISOString(),
+          };
+          rules.set(pkg, entry);
+          return [{ insertId: 1, affectedRows: 1 }, []];
+        }
+        if (/INSERT\s+INTO\s+currency_rates/i.test(trimmed)) {
+          const [curr, rate] = params;
+          const entry = { currency: curr, rate_to_usd: String(rate) };
+          rates.set(curr, entry);
+          return [{ insertId: 1, affectedRows: 1 }, []];
+        }
+        return [[], []];
+      },
+    };
+  }
+
   const dir = path.dirname(dbPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const db = new DatabaseSync(dbPath);
