@@ -8,9 +8,11 @@ async function getPool() {
   if (activePool) return activePool;
 
   if (connectionUri && connectionUri.startsWith('mysql://')) {
+    let testPool = null;
     try {
       const mysql = require('mysql2/promise');
-      const testPool = mysql.createPool(connectionUri);
+      testPool = mysql.createPool(connectionUri);
+      testPool.on('error', () => {});
 
       // Verify connection with a short timeout
       await Promise.race([
@@ -21,6 +23,9 @@ async function getPool() {
       activePool = testPool;
       return activePool;
     } catch (err) {
+      if (testPool) {
+        testPool.end().catch(() => {});
+      }
       console.warn(`[location-service] Notice: MySQL unavailable (${err.message}). Falling back to local SQLite database.`);
     }
   }

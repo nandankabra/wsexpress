@@ -78,9 +78,9 @@ services:
     environment:
       <<: *node-env
       PORT: 8001
-      DATABASE_URL: ${AUTH_DATABASE_URL:-${POSTGRES_URL:-postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/auth_db}}
-      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@shiptrack.local}
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@12345}
+      DATABASE_URL: ${AUTH_DATABASE_URL:-postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/auth_db}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@shiptrack.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@ShipTrack2026!}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
@@ -101,7 +101,7 @@ services:
     environment:
       <<: *node-env
       PORT: 8002
-      DATABASE_URL: ${USER_DATABASE_URL:-${POSTGRES_URL:-postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/user_db}}
+      DATABASE_URL: ${USER_DATABASE_URL:-postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/user_db}
     ports: ["8002:8002"]
     depends_on:
       postgres: { condition: service_healthy }
@@ -115,7 +115,7 @@ services:
     environment:
       <<: *node-env
       PORT: 8003
-      DATABASE_URL: ${CARRIER_DATABASE_URL:-${POSTGRES_URL:-postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/carrier_db}}
+      DATABASE_URL: ${CARRIER_DATABASE_URL:-postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/carrier_db}
       CRM_SERVICE_URL: http://crm-service:8008
     ports: ["8003:8003"]
     depends_on:
@@ -130,7 +130,7 @@ services:
     environment:
       <<: *node-env
       PORT: 8004
-      DATABASE_URL: ${SHIPMENT_DATABASE_URL:-${POSTGRES_URL:-postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/shipment_db}}
+      DATABASE_URL: ${SHIPMENT_DATABASE_URL:-postgres://${POSTGRES_USER:-shiptrack}:${POSTGRES_PASSWORD:-shiptrack}@postgres:5432/shipment_db}
       PRICING_SERVICE_URL: http://pricing-service:8006
       TRACKING_SERVICE_URL: http://tracking-service:8005
       CRM_SERVICE_URL: http://crm-service:8008
@@ -165,7 +165,7 @@ services:
     environment:
       <<: *node-env
       PORT: 8006
-      MYSQL_URL: ${PRICING_MYSQL_URL:-${MYSQL_URL:-}}
+      MYSQL_URL: ${PRICING_MYSQL_URL:-mysql://shiptrack:shiptrack@mysql:3306/pricing_db}
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
       MYSQL_USER: ${MYSQL_USER:-shiptrack}
@@ -188,7 +188,7 @@ services:
     environment:
       <<: *node-env
       PORT: 8007
-      MYSQL_URL: ${LOCATION_MYSQL_URL:-${MYSQL_URL:-}}
+      MYSQL_URL: ${LOCATION_MYSQL_URL:-mysql://shiptrack:shiptrack@mysql:3306/location_db}
       MYSQL_HOST: mysql
       MYSQL_PORT: 3306
       MYSQL_USER: ${MYSQL_USER:-shiptrack}

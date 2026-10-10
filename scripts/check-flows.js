@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:8000';
+const BASE_URL = process.env.API_GATEWAY_URL || process.env.BASE_URL || 'http://localhost:8000';
 const api = axios.create({ baseURL: BASE_URL, timeout: 25000 });
 
 let passed = 0;
@@ -148,11 +148,29 @@ async function run() {
 
   // Find Carrier Rahul
   const carrierRahulEmail = 'rahul@gmail.com';
-  // Carrier Rahul login to get carrier ID
-  const rahulLoginRes = await api.post('/api/v1/auth/login', {
-    email: carrierRahulEmail,
-    password: 'Carrier@12345!',
-  });
+  const carrierRahulPassword = 'Carrier@12345!';
+  let rahulLoginRes;
+  try {
+    rahulLoginRes = await api.post('/api/v1/auth/login', {
+      email: carrierRahulEmail,
+      password: carrierRahulPassword,
+    });
+  } catch (err) {
+    await api.post(
+      '/api/v1/auth/admin/accounts',
+      {
+        name: 'Carrier Rahul',
+        email: carrierRahulEmail,
+        password: carrierRahulPassword,
+        role: 'CARRIER',
+      },
+      { headers: { Authorization: `Bearer ${adminToken}` } }
+    );
+    rahulLoginRes = await api.post('/api/v1/auth/login', {
+      email: carrierRahulEmail,
+      password: carrierRahulPassword,
+    });
+  }
   assert(rahulLoginRes.status === 200, 'Carrier Rahul logged in successfully');
   const carrierRahulToken = rahulLoginRes.data.accessToken;
   const carrierRahulId = rahulLoginRes.data.user.id;
