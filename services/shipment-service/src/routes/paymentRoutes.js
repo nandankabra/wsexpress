@@ -9,7 +9,7 @@ const processPaymentSchema = {
   required: ['orderId', 'paymentMethod'],
   properties: {
     orderId: { type: 'string', format: 'uuid' },
-    paymentMethod: { type: 'string', enum: ['CREDIT_CARD', 'DEBIT_CARD', 'UPI', 'NET_BANKING', 'WALLET'] },
+    paymentMethod: { type: 'string', enum: ['CREDIT_CARD', 'DEBIT_CARD', 'CARD', 'UPI', 'NET_BANKING', 'WALLET'] },
     paymentDetails: { type: 'object' },
     idempotencyKey: { type: 'string' },
   },

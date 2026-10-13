@@ -5,11 +5,11 @@ export async function processPayment(payload, idempotencyKey) {
   if (idempotencyKey) {
     headers['X-Idempotency-Key'] = idempotencyKey;
   }
-  const { data } = await api.post('/api/v1/payments/process', payload, { headers });
+  const { data } = await api.post('/payments/process', payload, { headers });
   return data;
 }
 
 export async function getOrderPayments(orderId) {
-  const { data } = await api.get(`/api/v1/payments/order/${orderId}`);
+  const { data } = await api.get(`/payments/order/${orderId}`);
   return data;
 }

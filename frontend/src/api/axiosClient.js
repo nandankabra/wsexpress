@@ -33,7 +33,14 @@ const apiClient = axios.create({ baseURL: '/api/v1', timeout: 15000 });
 
 apiClient.interceptors.request.use((config) => {
   const token = getAccessToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    if (config.headers?.set) {
+      config.headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
   return config;
 });
 
@@ -57,7 +64,12 @@ apiClient.interceptors.response.use(
         refreshPromise = refreshPromise || refreshAccessToken();
         const newToken = await refreshPromise;
         refreshPromise = null;
-        config.headers.Authorization = `Bearer ${newToken}`;
+        if (config.headers?.set) {
+          config.headers.set('Authorization', `Bearer ${newToken}`);
+        } else {
+          config.headers = config.headers || {};
+          config.headers.Authorization = `Bearer ${newToken}`;
+        }
         return apiClient(config);
       } catch (refreshError) {
         refreshPromise = null;

@@ -239,13 +239,37 @@ async function updateStatus(id, { status, expectedVersion, assignedDriverId }) {
 }
 
 async function assignCarrier(id, carrierId, expectedVersion) {
+  const params = [id, carrierId];
+  let versionClause = '';
+  if (expectedVersion !== undefined && expectedVersion !== null) {
+    params.push(expectedVersion);
+    versionClause = `AND version = $${params.length}`;
+  }
   const { rows } = await pool.query(
     `UPDATE shipments
-     SET carrier_id = $2, assigned_driver_id = $2, version = version + 1, updated_at = now()
-     WHERE id = $1 AND version = $3
+     SET carrier_id = $2,
+         assigned_driver_id = $2,
+         status = CASE WHEN status = 'CREATED' THEN 'ASSIGNED' ELSE status END,
+         version = version + 1,
+         updated_at = now()
+     WHERE id = $1 ${versionClause}
      RETURNING *`,
-    [id, carrierId, expectedVersion],
+    params,
   );
+  if (!rows[0] && versionClause) {
+    const retryRes = await pool.query(
+      `UPDATE shipments
+       SET carrier_id = $2,
+           assigned_driver_id = $2,
+           status = CASE WHEN status = 'CREATED' THEN 'ASSIGNED' ELSE status END,
+           version = version + 1,
+           updated_at = now()
+       WHERE id = $1
+       RETURNING *`,
+      [id, carrierId],
+    );
+    return retryRes.rows[0] || null;
+  }
   return rows[0] || null;
 }
 

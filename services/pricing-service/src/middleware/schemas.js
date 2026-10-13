@@ -1,13 +1,28 @@
 const quoteSchema = {
   type: 'object',
-  required: ['originCountry', 'destinationCountry', 'weightKg'],
+  anyOf: [
+    { required: ['originCountry', 'destinationCountry'] },
+    { required: ['origin', 'destination'] },
+    { required: ['originCity', 'destinationCity'] },
+  ],
   properties: {
     originCountry: { type: 'string', minLength: 2, maxLength: 2 },
     destinationCountry: { type: 'string', minLength: 2, maxLength: 2 },
     originCity: { type: 'string' },
     destinationCity: { type: 'string' },
+    origin: { type: 'string' },
+    destination: { type: 'string' },
     weightKg: { type: 'number', minimum: 0.1 },
+    weight: { type: 'number', minimum: 0.1 },
     dimensionsCm: {
+      type: 'object',
+      properties: {
+        length: { type: 'number', minimum: 1 },
+        width: { type: 'number', minimum: 1 },
+        height: { type: 'number', minimum: 1 }
+      }
+    },
+    dimensions: {
       type: 'object',
       properties: {
         length: { type: 'number', minimum: 1 },

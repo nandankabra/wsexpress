@@ -39,10 +39,11 @@ async function simulatePayment({ method, details = {}, amount, currency, orderId
     throw ApiError.internal('Security violation: live payment credentials detected in test simulation mode.');
   }
 
-  const validMethods = ['CREDIT_CARD', 'DEBIT_CARD', 'UPI', 'NET_BANKING', 'WALLET'];
-  const normMethod = (method || '').toUpperCase();
+  const validMethods = ['CREDIT_CARD', 'DEBIT_CARD', 'CARD', 'UPI', 'NET_BANKING', 'WALLET'];
+  let normMethod = (method || '').toUpperCase();
+  if (normMethod === 'CARD') normMethod = 'CREDIT_CARD';
   if (!validMethods.includes(normMethod)) {
-    throw ApiError.badRequest(`Unsupported payment method. Supported methods: ${validMethods.join(', ')}`);
+    throw ApiError.badRequest(`Unsupported payment method. Supported methods: CREDIT_CARD, DEBIT_CARD, UPI, NET_BANKING, WALLET`);
   }
 
   const paymentReference = `SIM-PAY-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;

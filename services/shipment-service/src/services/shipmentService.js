@@ -247,6 +247,14 @@ async function assignCarrier(id, carrierId, expectedVersion) {
     if (!existing) throw ApiError.notFound('Shipment not found');
     throw ApiError.preconditionFailed('Shipment was modified by someone else, refresh and retry');
   }
+  try {
+    await trackingClient.recordEvent(updated.tracking_id, {
+      status: 'ASSIGNED',
+      note: `Shipment assigned to carrier partner (${carrierId})`,
+    });
+  } catch (err) {
+    // Non-blocking for tracking event
+  }
   return toResponse(updated);
 }
 

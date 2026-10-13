@@ -2,7 +2,14 @@ const pricingService = require('../services/pricingService');
 
 async function quote(req, res, next) {
   try {
-    res.status(200).json(await pricingService.calculateQuote(req.body, req.correlationId));
+    const body = { ...req.body };
+    if (!body.originCountry) body.originCountry = 'IN';
+    if (!body.destinationCountry) body.destinationCountry = 'IN';
+    if (!body.originCity && body.origin) body.originCity = body.origin;
+    if (!body.destinationCity && body.destination) body.destinationCity = body.destination;
+    if (body.weightKg === undefined && body.weight !== undefined) body.weightKg = body.weight;
+    if (!body.dimensionsCm && body.dimensions) body.dimensionsCm = body.dimensions;
+    res.status(200).json(await pricingService.calculateQuote(body, req.correlationId));
   } catch (err) {
     next(err);
   }
