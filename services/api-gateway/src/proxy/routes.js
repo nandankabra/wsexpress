@@ -9,6 +9,7 @@ function buildRouteTable() {
     { path: '/api/v1/customers', target: process.env.USER_SERVICE_URL },
     { path: '/api/v1/carriers', target: process.env.CARRIER_SERVICE_URL },
     { path: '/api/v1/shipments', target: process.env.SHIPMENT_SERVICE_URL },
+    { path: '/api/v1/payments', target: process.env.PAYMENT_SERVICE_URL || process.env.SHIPMENT_SERVICE_URL },
     { path: '/api/v1/tracking', target: process.env.TRACKING_SERVICE_URL },
     { path: '/api/v1/pricing', target: process.env.PRICING_SERVICE_URL },
     { path: '/api/v1/locations', target: process.env.LOCATION_SERVICE_URL },

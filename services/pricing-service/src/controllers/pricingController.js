@@ -38,4 +38,22 @@ async function upsertRule(req, res, next) {
   }
 }
 
-module.exports = { quote, convert, listRules, upsertRule };
+async function getConfig(req, res, next) {
+  try {
+    res.status(200).json(pricingService.getActiveConfig());
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function updateConfig(req, res, next) {
+  try {
+    const adminUser = req.user?.email || 'admin';
+    const result = pricingService.updateActiveConfig(req.body, adminUser);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { quote, convert, listRules, upsertRule, getConfig, updateConfig };

@@ -44,4 +44,19 @@ const upsertRuleSchema = {
   },
 };
 
-module.exports = { quoteSchema, convertSchema, upsertRuleSchema };
+const updateConfigSchema = {
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    baseHandlingFare: { type: 'number', minimum: 10, maximum: 1000 },
+    distanceRatePerKm: { type: 'number', minimum: 0.05, maximum: 5.0 },
+    weightRatePerKg: { type: 'number', minimum: 5, maximum: 500 },
+    expressMultiplier: { type: 'number', minimum: 1.0, maximum: 3.0 },
+    taxRate: { type: 'number', minimum: 0, maximum: 0.35 },
+    fuelSurchargePercent: { type: 'number', minimum: 0, maximum: 0.25 },
+    minimumCharge: { type: 'number', minimum: 20, maximum: 2000 },
+    maximumCharge: { type: 'number', minimum: 1000, maximum: 500000 },
+  },
+};
+
+module.exports = { quoteSchema, convertSchema, upsertRuleSchema, updateConfigSchema };

@@ -13,6 +13,7 @@ import {
   Settings,
   Activity,
   PlusCircle,
+  Sliders,
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
@@ -34,6 +35,8 @@ export default function DashboardLayout() {
     ],
     ADMIN: [
       { name: 'Command Center', href: '/admin', icon: LayoutDashboard },
+      { name: 'Orders & Dispatch', href: '/admin/orders', icon: Package },
+      { name: 'Pricing Engine', href: '/admin/pricing', icon: Sliders },
       { name: 'Customer Accounts', href: '/admin/customers', icon: Users },
       { name: 'Carrier Fleet', href: '/admin/carriers', icon: Truck },
       { name: 'Fleet Telemetry', href: '/admin/monitoring', icon: Activity },

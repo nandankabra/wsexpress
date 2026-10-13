@@ -78,4 +78,53 @@ async function updateDelivery(req, res, next) {
   }
 }
 
-module.exports = { quote, create, getById, trackPublic, list, updateStatus, assignCarrier, updateDelivery };
+async function listOrdersAdmin(req, res, next) {
+  try {
+    const filters = {
+      page: Number(req.query.page) || 1,
+      limit: Math.min(Number(req.query.limit) || 20, 100),
+      search: req.query.search,
+      orderStatus: req.query.orderStatus,
+      paymentStatus: req.query.paymentStatus,
+      shipmentStatus: req.query.shipmentStatus || req.query.status,
+      serviceType: req.query.serviceType,
+      originCity: req.query.originCity,
+      destinationCity: req.query.destinationCity,
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
+      sortBy: req.query.sortBy || 'created_desc',
+    };
+    const result = await shipmentService.listOrdersAdmin(req.user, filters);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function adminOrderAction(req, res, next) {
+  try {
+    const result = await shipmentService.performAdminOrderAction(
+      req.params.id,
+      req.user,
+      req.body,
+      req.correlationId,
+    );
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  quote,
+  create,
+  getById,
+  trackPublic,
+  list,
+  updateStatus,
+  assignCarrier,
+  updateDelivery,
+  listOrdersAdmin,
+  adminOrderAction,
+};
+

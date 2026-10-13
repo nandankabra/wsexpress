@@ -21,3 +21,10 @@ export const downloadLabel = (id) =>
 
 export const downloadInvoice = (id) =>
   apiClient.get(`/shipments/${id}/invoice`, { responseType: 'blob' }).then((r) => r.data);
+
+export const listAdminOrders = (params) =>
+  apiClient.get('/shipments/admin/orders', { params }).then((r) => r.data);
+
+export const adminOrderAction = (id, action, payload = {}) =>
+  apiClient.patch(`/shipments/admin/orders/${id}/action`, { action, payload }).then((r) => r.data);
+

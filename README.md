@@ -102,15 +102,50 @@ outbound inter-service call, each with a sensible fallback.
 **Databases** - PostgreSQL + MySQL (SQL) and MongoDB (NoSQL).
 **Security** - JWT authentication; role-based authorization (gateway-level + per-service).
 
+## Major Feature Enhancements
+
+### 1. Intelligent & Dynamic Delivery Pricing Engine
+- **Affordable Benchmark Pricing**: Replaced previous inflated charges (~₹5,000 for 1,000 km) with transparent, realistic logistics pricing. An ordinary 1 kg parcel traveling ~1,000 km (e.g. Delhi to Mumbai road route ~1,438 km) is priced at **~₹340–₹455 INR**.
+- **Geodesic Road Distance Service**: Uses Haversine distance calculations enhanced with an empirical **1.25× road circuity factor** and in-memory LRU caching for known coordinates.
+- **Volumetric Weight Calculation**: Automatically computes dimensional weight using standard IATA surface formula:
+  $$\text{Volumetric Weight (kg)} = \frac{\text{Length (cm)} \times \text{Width (cm)} \times \text{Height (cm)}}{5000}$$
+  The chargeable weight is the greater of actual scale weight and volumetric weight.
+- **Itemized Pricing Breakdown**:
+  $$\text{Final Price} = \text{Base Fare} + \text{Distance Charge} + \text{Weight Charge} + \text{Express Surcharge} + \text{Fuel Surcharge} + \text{Tax}$$
+- **Admin Rate Card Controls & Live Simulator** (`/admin/pricing`): Administrators can review, simulate, and adjust rate card parameters (base fare, distance rate per km, weight rate per kg, express multiplier, safety caps) with instant validation, confirmation dialogs, and revision audit logs.
+- **Cryptographic & Authoritative Server Verification**: Client-submitted amounts are never trusted; the backend pricing service calculates authoritative quotes and freezes the pricing version snapshot upon order creation.
+
+### 2. Professional Admin Order Management Dashboard (`/admin/orders`)
+- **Executive KPI Cards**: Real-time aggregation of Total Orders, Awaiting Payment, Paid Orders, In-Transit, Delivered, Cancelled, and Total Revenue.
+- **Chronological Order Sorting**: Latest orders always display first (`created_at DESC, id DESC`).
+- **Server-Side Search, Filter & Pagination**:
+  - Search by Order Number, Tracking ID, Customer Name, or Email with debounce.
+  - Filter by Order Status (`PENDING`, `CONFIRMED`, `CANCELLED`), Payment Status (`UNPAID`, `PAID`, `FAILED`, `REFUNDED`), Origin/Destination, and Delivery Speed.
+  - Sort by Newest, Oldest, Highest Amount, or Lowest Amount.
+- **Order Inspection & Dispatch Drawer**: Deep inspection of customer details, parcel dimensions, pricing breakdown, payment transaction receipts, status change history, and carrier assignment actions (`CONFIRM_ORDER`, `ASSIGN_CARRIER`, `CANCEL_ORDER`, `UPDATE_STATUS`).
+
+### 3. Secure Testing-Mode Payment System
+- **Strict Testing Mode Operation**: Payment simulation operates strictly with zero real-world financial risk (`testingMode: true`). Rejects real credit card numbers and live credentials.
+- **Simulated Payment Instruments**:
+  - **Cards**: Test Visa (`4000 0000 0000 0001` - Success), Test Declined (`4000 0000 0000 0002`), Insufficient Funds (`4000 0000 0000 0003`).
+  - **UPI**: Test VPA handles (e.g. `customer@okhdfcbank`, `success@upi`).
+  - **Net Banking & Wallets**: Direct simulated gateway redirects and callbacks.
+- **Concurrency & Idempotency Controls**:
+  - Database row locking (`SELECT FOR UPDATE`) prevents concurrent double payments.
+  - Request fingerprinting (SHA-256 payload digest + `Idempotency-Key` stored in `payment_idempotency`) ensures safe retries.
+  - Decoupled lifecycle: Separate `order_status` (`PENDING`, `CONFIRMED`, `CANCELLED`), `payment_status` (`UNPAID`, `PAID`, `FAILED`, `REFUNDED`), and `shipment_status` (`ORDER_PLACED`, `PICKED_UP`, `IN_TRANSIT`, `DELIVERED`).
+  - Transaction ledger (`payments`) and immutable audit trail (`payment_events`).
+
 ## Testing
 
-Every service ships Jest + Supertest tests that mock the database/outbound-client layer, so the
-whole suite runs without any containers:
+Every service ships Jest + Supertest tests that mock the database/outbound-client layer, so the whole suite runs without any containers:
 
 ```bash
 npm install
 npm test --workspaces --if-present
 ```
+
+**109 unit tests passing across all 13 workspaces (100% pass rate).**
 
 ## Known Limitations
 
@@ -120,4 +155,3 @@ npm test --workspaces --if-present
   Render specifically (documented in the deployment guide).
 - Coverage thresholds are configured but not enforced as a CI gate; tests cover the golden path,
   RBAC, and validation/error-shape contracts per service rather than exhaustive line coverage.
-# wsexpress

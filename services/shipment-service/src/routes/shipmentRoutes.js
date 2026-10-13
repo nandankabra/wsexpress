@@ -14,6 +14,8 @@ router.post(
   validate(schemas.createShipmentSchema),
   controller.create,
 );
+router.get('/admin/orders', authenticate, requireRole('ADMIN'), controller.listOrdersAdmin);
+router.patch('/admin/orders/:id/action', authenticate, requireRole('ADMIN'), controller.adminOrderAction);
 router.get('/', authenticate, controller.list);
 router.get('/track/:trackingId', cacheControl(10), controller.trackPublic);
 router.get('/:id', authenticate, etag(), controller.getById);

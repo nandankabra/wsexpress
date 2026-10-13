@@ -28,6 +28,8 @@ import CustomerManagement from './pages/admin/CustomerManagement';
 import CarrierManagement from './pages/admin/CarrierManagement';
 import ShipmentMonitoring from './pages/admin/ShipmentMonitoring';
 import Analytics from './pages/admin/Analytics';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminPricing from './pages/admin/AdminPricing';
 
 import ShipmentDetail from './pages/ShipmentDetail';
 
@@ -69,6 +71,8 @@ export default function App() {
 
             <Route path="/admin" element={<ProtectedRoute role="ADMIN" />}>
               <Route index element={<AdminDashboard />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="pricing" element={<AdminPricing />} />
               <Route path="customers" element={<CustomerManagement />} />
               <Route path="carriers" element={<CarrierManagement />} />
               <Route path="monitoring" element={<ShipmentMonitoring />} />
