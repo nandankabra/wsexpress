@@ -1,21 +1,39 @@
 const { hashPassword } = require('@shiptrack/common');
 const userModel = require('../models/userModel');
 
-async function seedAdmin() {
-  const email = process.env.ADMIN_EMAIL;
-  const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password) return;
+async function seedDefaultAccounts() {
+  const adminEmail = process.env.ADMIN_EMAIL || 'admin@shiptrack.com';
+  const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@ShipTrack2026!';
 
-  const existing = await userModel.findByEmail(email);
-  if (existing) {
-    if (!existing.is_verified) {
-      await userModel.updateVerification(existing.id, true);
-    }
-    return;
+  // 1. Admin
+  const existingAdmin = await userModel.findByEmail(adminEmail);
+  if (!existingAdmin) {
+    const passwordHash = await hashPassword(adminPassword);
+    await userModel.create({ name: 'Platform Admin', email: adminEmail, passwordHash, role: 'ADMIN', isVerified: true });
+  } else if (!existingAdmin.is_verified) {
+    await userModel.updateVerification(existingAdmin.id, true);
   }
 
-  const passwordHash = await hashPassword(password);
-  await userModel.create({ name: 'Platform Admin', email, passwordHash, role: 'ADMIN', isVerified: true });
+  // 2. Demo Customer
+  const custEmail = 'customer@shiptrack.com';
+  const existingCust = await userModel.findByEmail(custEmail);
+  if (!existingCust) {
+    const custHash = await hashPassword('Customer@12345!');
+    await userModel.create({ name: 'ShipTrack Customer', email: custEmail, passwordHash: custHash, role: 'CUSTOMER', isVerified: true });
+  } else if (!existingCust.is_verified) {
+    await userModel.updateVerification(existingCust.id, true);
+  }
+
+  // 3. Demo Carrier
+  const carrEmail = 'carrier@shiptrack.com';
+  const existingCarr = await userModel.findByEmail(carrEmail);
+  if (!existingCarr) {
+    const carrHash = await hashPassword('Carrier@12345!');
+    await userModel.create({ name: 'ShipTrack Express Carrier', email: carrEmail, passwordHash: carrHash, role: 'CARRIER', isVerified: true });
+  } else if (!existingCarr.is_verified) {
+    await userModel.updateVerification(existingCarr.id, true);
+  }
 }
 
-module.exports = { seedAdmin };
+module.exports = { seedAdmin: seedDefaultAccounts };
+
