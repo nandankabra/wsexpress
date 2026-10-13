@@ -7,6 +7,7 @@ function rateLimiter({ windowMs = 60_000, max = 100 } = {}) {
     max,
     standardHeaders: true,
     legacyHeaders: false,
+    validate: { trustProxy: false },
     handler(req, res, next) {
       next(ApiError.tooManyRequests('Too many requests, please try again later'));
     },

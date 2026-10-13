@@ -27,6 +27,7 @@ function buildApp() {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+  app.set('trust proxy', true);
   app.disable('x-powered-by');
   app.use(helmet());
   app.use(cors({
