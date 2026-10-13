@@ -121,3 +121,5 @@ npm test --workspaces --if-present
 - Coverage thresholds are configured but not enforced as a CI gate; tests cover the golden path,
   RBAC, and validation/error-shape contracts per service rather than exhaustive line coverage.
 # wsexpress
+
+It get finish
