@@ -4,7 +4,7 @@ const controller = require('../controllers/authController');
 const schemas = require('../middleware/schemas');
 
 const router = express.Router();
-const loginLimiter = rateLimiter({ windowMs: 60_000, max: 100 });
+const loginLimiter = rateLimiter({ windowMs: 60_000, max: 5000 });
 
 router.post('/register', idempotency(), validate(schemas.registerSchema), controller.register);
 router.post('/login', loginLimiter, validate(schemas.loginSchema), controller.login);

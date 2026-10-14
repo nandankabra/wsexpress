@@ -40,13 +40,21 @@ function buildApp() {
   // Deliberately no express.json() here: this is a pure reverse proxy, so request bodies
   // must be streamed through to the upstream service untouched rather than parsed and
   // re-serialized (parsing here would consume the stream before the proxy can forward it).
-  app.use(rateLimiter({ windowMs: 60_000, max: 600 }));
+  app.use(rateLimiter({ windowMs: 60_000, max: 10000 }));
 
   app.get(['/health', '/healthz'], (req, res) => {
     res.json({ status: 'UP', service: SERVICE_NAME, timestamp: new Date().toISOString() });
   });
 
   swaggerDocs(app, path.join(__dirname, '..', 'openapi.yaml'));
+
+  // URL normalization: rewrite accidentally doubled /api/v1/api/v1/* to /api/v1/*
+  app.use((req, res, next) => {
+    if (req.url.startsWith('/api/v1/api/v1/')) {
+      req.url = req.url.replace('/api/v1/api/v1/', '/api/v1/');
+    }
+    next();
+  });
 
   app.use(gatewayAuth);
 

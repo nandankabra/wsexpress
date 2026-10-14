@@ -7,7 +7,7 @@ const SERVICE_NAME = 'auth-service';
 function buildApp() {
   const { app } = createBaseApp(SERVICE_NAME);
 
-  app.use(rateLimiter({ windowMs: 60_000, max: 300 }));
+  app.use(rateLimiter({ windowMs: 60_000, max: 10000 }));
   swaggerDocs(app, path.join(__dirname, '..', 'openapi.yaml'));
 
   app.use('/api/v1/auth', authRoutes);
