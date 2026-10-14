@@ -231,10 +231,10 @@ export default function ShipmentDetail() {
                 <span className="text-zinc-500">Total Weight</span>
                 <span className="font-medium text-zinc-900">{shipment.weightKg} kg</span>
               </div>
-              {(shipment.quotedPrice !== null && shipment.quotedPrice !== undefined) && (
+              {(shipment.totalAmount !== null && shipment.totalAmount !== undefined || shipment.quotedPrice !== null && shipment.quotedPrice !== undefined) && (
                 <div className="flex justify-between py-1.5 border-b border-zinc-100">
-                  <span className="text-zinc-500">Total Quoted</span>
-                  <span className="font-bold text-zinc-900">${Number(shipment.quotedPrice).toFixed(2)} {shipment.currency || 'USD'}</span>
+                  <span className="text-zinc-500">Total Payable</span>
+                  <span className="font-bold text-zinc-900">₹{Number(shipment.totalAmount ?? shipment.quotedPrice).toFixed(2)} {shipment.currency || 'INR'}</span>
                 </div>
               )}
               {shipment.estimatedDeliveryDate && (
