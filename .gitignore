@@ -25,3 +25,7 @@ frontend/dist/
 # Docker volumes data (if any bind mounts land here)
 infra/**/data/
 .data/
+
+# Generated reports & documentation PDFs (ignored so they are never committed to git)
+*.pdf
+scripts/generate-*.js
