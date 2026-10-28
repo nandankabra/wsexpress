@@ -6,18 +6,15 @@ const trackingClient = require('../clients/trackingClient');
 const crmClient = require('../clients/crmClient');
 
 const NEXT_STATUS = {
-  CREATED: ['ASSIGNED', 'CANCELLED'],
-  ASSIGNED: ['PICKED_UP', 'CANCELLED'],
-  PICKED_UP: ['ARRIVED_AT_HUB', 'CANCELLED'],
-  ARRIVED_AT_HUB: ['IN_TRANSIT', 'ASSIGNED', 'OUT_FOR_DELIVERY', 'CANCELLED'],
-  IN_TRANSIT: ['ARRIVED_AT_HUB', 'CANCELLED'],
-  OUT_FOR_DELIVERY: ['DELIVERED', 'CANCELLED'],
+  CREATED: ['ASSIGNED', 'PICKED_UP', 'IN_TRANSIT', 'CANCELLED'],
+  ASSIGNED: ['PICKED_UP', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'CANCELLED'],
+  PICKED_UP: ['IN_TRANSIT', 'ARRIVED_AT_HUB', 'OUT_FOR_DELIVERY', 'CANCELLED'],
+  ARRIVED_AT_HUB: ['IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'ASSIGNED', 'CANCELLED'],
+  IN_TRANSIT: ['ARRIVED_AT_HUB', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'],
+  OUT_FOR_DELIVERY: ['DELIVERED', 'IN_TRANSIT', 'ARRIVED_AT_HUB', 'CANCELLED'],
   DELIVERED: [],
   CANCELLED: [],
 };
-
-// Manually allow ASSIGNED -> OUT_FOR_DELIVERY when picked up from destination hub
-NEXT_STATUS['ASSIGNED'].push('OUT_FOR_DELIVERY');
 
 function generateTrackingId() {
   return `STK${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
@@ -197,7 +194,11 @@ async function updateStatus(id, actor, { status, expectedVersion }, correlationI
   if (!existing) throw ApiError.notFound('Shipment not found');
   assertCanView(existing, actor);
 
-  if (!NEXT_STATUS[existing.status]?.includes(status)) {
+  const isTerminal = ['DELIVERED', 'CANCELLED'].includes(existing.status);
+  const isAllowedTransition = NEXT_STATUS[existing.status]?.includes(status);
+  const isAdminOverride = actor.role === 'ADMIN' && !isTerminal;
+
+  if (!isAllowedTransition && !isAdminOverride) {
     throw ApiError.unprocessable(`Cannot transition shipment from ${existing.status} to ${status}`);
   }
 

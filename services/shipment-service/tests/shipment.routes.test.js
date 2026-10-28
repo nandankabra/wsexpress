@@ -148,6 +148,21 @@ describe('GET /api/v1/shipments (carrier scope)', () => {
 });
 
 describe('PATCH /api/v1/shipments/:id/status', () => {
+  test('allows transitioning from PICKED_UP to IN_TRANSIT', async () => {
+    const pickedUp = { ...dbRow, status: 'PICKED_UP', assigned_driver_id: 'carrier-1' };
+    shipmentModel.findById.mockResolvedValue(pickedUp);
+    shipmentModel.updateStatus.mockResolvedValue({ ...pickedUp, status: 'IN_TRANSIT', version: 3 });
+    trackingClient.recordEvent.mockResolvedValue(null);
+
+    const res = await request(app)
+      .patch('/api/v1/shipments/ship-1/status')
+      .set('Authorization', `Bearer ${carrierToken}`)
+      .send({ status: 'IN_TRANSIT', expectedVersion: 2 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('IN_TRANSIT');
+  });
+
   test('rejects an invalid state transition', async () => {
     shipmentModel.findById.mockResolvedValue({ ...dbRow, status: 'DELIVERED', assigned_driver_id: 'carrier-1' });
     const res = await request(app)
