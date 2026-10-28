@@ -58,6 +58,16 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const { config, response } = error;
+
+    // Automatic retry for Render cold starts / hibernate rate limiting (HTTP 429 & 503)
+    const isColdStartRateLimited = response?.status === 429 || response?.status === 503;
+    if (isColdStartRateLimited && config && (config._retryCount || 0) < 3) {
+      config._retryCount = (config._retryCount || 0) + 1;
+      const delay = Math.min(1200 * Math.pow(1.5, config._retryCount) + Math.random() * 500, 5000);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return apiClient(config);
+    }
+
     if (response?.status === 401 && !config._retried && getRefreshToken()) {
       config._retried = true;
       try {
