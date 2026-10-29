@@ -22,7 +22,11 @@ envVarGroups:
       - key: REFRESH_TOKEN_TTL
         value: 7d
       - key: CORS_ORIGIN
-        value: "https://shiptrack-frontend.onrender.com,http://localhost:3001"
+        value: "https://shiptrack-frontend.onrender.com,https://shiptrack-frontend-f3ht.onrender.com,http://localhost:3001,http://localhost:5173"
+      - key: DISABLE_RATE_LIMIT
+        value: "true"
+      - key: RATE_LIMIT_DISABLED
+        value: "true"
       - key: DATABASE_URL
         sync: false # Paste your Neon PostgreSQL URL
       - key: MYSQL_URL
