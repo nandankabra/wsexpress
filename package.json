@@ -13,6 +13,7 @@
     "lint": "npm run lint --workspaces --if-present",
     "start:backend": "node scripts/start-all.js",
     "test:flows": "node scripts/check-flows.js",
+    "keepalive": "node scripts/keep-render-alive.js",
     "dev": "npm run dev --workspace=frontend"
   },
   "engines": {

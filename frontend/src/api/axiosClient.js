@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'sonner';
 
 const ACCESS_TOKEN_KEY = 'shiptrack_access_token';
 const REFRESH_TOKEN_KEY = 'shiptrack_refresh_token';
@@ -29,7 +30,7 @@ export function clearSession() {
   localStorage.removeItem(USER_KEY);
 }
 
-const apiClient = axios.create({ baseURL: '/api/v1', timeout: 15000 });
+const apiClient = axios.create({ baseURL: '/api/v1', timeout: 60000 });
 
 apiClient.interceptors.request.use((config) => {
   const token = getAccessToken();
@@ -55,18 +56,44 @@ async function refreshAccessToken() {
 }
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    try {
+      toast.dismiss('render-cold-start');
+    } catch (_) {}
+    return response;
+  },
   async (error) => {
     const { config, response } = error;
 
     // Automatic retry for Render cold starts / hibernate rate limiting (HTTP 429 & 503)
-    const isColdStartRateLimited = response?.status === 429 || response?.status === 503;
-    if (isColdStartRateLimited && config && (config._retryCount || 0) < 3) {
+    const isColdStart =
+      response?.status === 429 ||
+      response?.status === 503 ||
+      error.code === 'ECONNABORTED' ||
+      !response;
+
+    const maxRetries = 8;
+    if (isColdStart && config && (config._retryCount || 0) < maxRetries) {
       config._retryCount = (config._retryCount || 0) + 1;
-      const delay = Math.min(1200 * Math.pow(1.5, config._retryCount) + Math.random() * 500, 5000);
+
+      try {
+        if (config._retryCount === 1) {
+          toast.loading('Server instance waking up from standby, please wait...', {
+            id: 'render-cold-start',
+            duration: 40000,
+          });
+        }
+      } catch (_) {}
+
+      // Progressive backoff: 2s, 3s, 4s, 5s...
+      const delay = Math.min(1800 + config._retryCount * 800, 5000);
       await new Promise((resolve) => setTimeout(resolve, delay));
       return apiClient(config);
     }
+
+    try {
+      toast.dismiss('render-cold-start');
+    } catch (_) {}
 
     if (response?.status === 401 && !config._retried && getRefreshToken()) {
       config._retried = true;
@@ -91,5 +118,12 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+// Keepalive ping every 3 minutes while browser is open
+if (typeof window !== 'undefined') {
+  setInterval(() => {
+    apiClient.get('/health', { timeout: 10000 }).catch(() => {});
+  }, 3 * 60 * 1000);
+}
 
 export default apiClient;

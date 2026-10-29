@@ -2,8 +2,12 @@ const rateLimit = require('express-rate-limit');
 const { ApiError } = require('./errors');
 
 function rateLimiter({ windowMs = 60_000, max = 5000, keyGenerator } = {}) {
-  // If rate limiting is disabled via env var, return a pass-through middleware
-  if (process.env.RATE_LIMIT_DISABLED === 'true' || process.env.DISABLE_RATE_LIMIT === 'true') {
+  // If rate limiting is disabled via env var or running in test mode, return a pass-through middleware
+  if (
+    process.env.NODE_ENV === 'test' ||
+    process.env.RATE_LIMIT_DISABLED === 'true' ||
+    process.env.DISABLE_RATE_LIMIT === 'true'
+  ) {
     return (req, res, next) => next();
   }
 

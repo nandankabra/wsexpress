@@ -42,7 +42,7 @@ function buildApp() {
   // re-serialized (parsing here would consume the stream before the proxy can forward it).
   app.use(rateLimiter({ windowMs: 60_000, max: 10000 }));
 
-  app.get(['/health', '/healthz'], (req, res) => {
+  app.get(['/health', '/healthz', '/api/v1/health'], (req, res) => {
     res.json({ status: 'UP', service: SERVICE_NAME, timestamp: new Date().toISOString() });
   });
 
