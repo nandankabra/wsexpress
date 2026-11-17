@@ -10,6 +10,7 @@ const {
   notFoundHandler,
   rateLimiter,
   swaggerDocs,
+  contentNegotiation,
   assertProductionConfig,
 } = require('@shiptrack/common');
 const { gatewayAuth } = require('./middleware/gatewayAuth');
@@ -41,6 +42,7 @@ function buildApp() {
   // must be streamed through to the upstream service untouched rather than parsed and
   // re-serialized (parsing here would consume the stream before the proxy can forward it).
   app.use(rateLimiter({ windowMs: 60_000, max: 10000 }));
+  app.use(contentNegotiation());
 
   app.get(['/health', '/healthz', '/api/v1/health'], (req, res) => {
     res.json({ status: 'UP', service: SERVICE_NAME, timestamp: new Date().toISOString() });

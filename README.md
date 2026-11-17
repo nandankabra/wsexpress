@@ -136,7 +136,7 @@ outbound inter-service call, each with a sensible fallback.
   - Decoupled lifecycle: Separate `order_status` (`PENDING`, `CONFIRMED`, `CANCELLED`), `payment_status` (`UNPAID`, `PAID`, `FAILED`, `REFUNDED`), and `shipment_status` (`ORDER_PLACED`, `PICKED_UP`, `IN_TRANSIT`, `DELIVERED`).
   - Transaction ledger (`payments`) and immutable audit trail (`payment_events`).
 
-## Testing
+## Testing & Verification
 
 Every service ships Jest + Supertest tests that mock the database/outbound-client layer, so the whole suite runs without any containers:
 
@@ -145,7 +145,19 @@ npm install
 npm test --workspaces --if-present
 ```
 
-**109 unit tests passing across all 13 workspaces (100% pass rate).**
+**111 unit & integration tests passing across all 13 workspaces (100% pass rate).**
+
+### End-to-End & Compliance Verification
+
+Once the stack is running via Docker (`docker compose up -d`):
+
+```bash
+# 1. Run core end-to-end integration flows (Auth, OTP, Pricing, PDF, Telemetry, GraphQL):
+npm run test:flows
+
+# 2. Run master compliance verification suite (all Module 2 & Modules 1, 3, 4 requirements):
+npm run test:suite
+```
 
 ## Known Limitations
 

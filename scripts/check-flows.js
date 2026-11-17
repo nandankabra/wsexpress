@@ -133,10 +133,22 @@ async function run() {
   // Flow 4: Admin Assignment & Fleet Management
   // ==========================================
   console.log('\n--- [Flow 4] Admin Dispatch & Carrier Assignment ---');
-  const adminLoginRes = await api.post('/api/v1/auth/login', {
-    email: 'admin@shiptrack.com',
-    password: 'Admin@ShipTrack2026!',
-  });
+  const adminCredentials = [
+    { email: process.env.ADMIN_EMAIL || 'admin@shiptrack.local', password: process.env.ADMIN_PASSWORD || 'Admin@12345' },
+    { email: 'admin@shiptrack.com', password: 'Admin@ShipTrack2026!' },
+  ];
+  let adminLoginRes;
+  for (const cred of adminCredentials) {
+    try {
+      adminLoginRes = await api.post('/api/v1/auth/login', cred);
+      if (adminLoginRes.status === 200) break;
+    } catch (e) {
+      // try next credential
+    }
+  }
+  if (!adminLoginRes) {
+    throw new Error('Could not log in as admin with either credential set');
+  }
   assert(adminLoginRes.status === 200, 'Admin logged in successfully');
   const adminToken = adminLoginRes.data.accessToken;
 

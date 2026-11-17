@@ -4,6 +4,7 @@ const cors = require('cors');
 const { correlationId } = require('./correlationId');
 const { createLogger, requestLogger } = require('./logger');
 const { paginationLinker } = require('./pagination');
+const { contentNegotiation } = require('./contentNegotiation');
 const { assertProductionConfig } = require('./runtimeConfig');
 
 /**
@@ -33,6 +34,7 @@ function createBaseApp(serviceName) {
   app.use(requestLogger(logger));
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true }));
+  app.use(contentNegotiation());
   app.use(paginationLinker);
 
   app.get(['/health', '/healthz'], (req, res) => {

@@ -1,18 +1,18 @@
 const rateLimit = require('express-rate-limit');
 const { ApiError } = require('./errors');
 
-function rateLimiter({ windowMs = 60_000, max = 5000, keyGenerator } = {}) {
+function rateLimiter({ windowMs = 60_000, max = 5000, keyGenerator, strictMax = false, enableInTest = false } = {}) {
   // If rate limiting is disabled via env var or running in test mode, return a pass-through middleware
   if (
-    process.env.NODE_ENV === 'test' ||
+    (!enableInTest && process.env.NODE_ENV === 'test') ||
     process.env.RATE_LIMIT_DISABLED === 'true' ||
     process.env.DISABLE_RATE_LIMIT === 'true'
   ) {
     return (req, res, next) => next();
   }
 
-  // Ensure minimum threshold of 2,000 requests per minute to prevent 429 during active usage/testing
-  const effectiveMax = Math.max(Number(max) || 5000, 2000);
+  // Ensure minimum threshold of 2,000 requests per minute unless strictMax is requested
+  const effectiveMax = strictMax ? Number(max) : Math.max(Number(max) || 5000, 2000);
 
   return rateLimit({
     windowMs,

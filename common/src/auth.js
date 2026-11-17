@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { ApiError } = require('./errors');
@@ -18,7 +19,7 @@ function signAccessToken(payload) {
 }
 
 function signRefreshToken(payload) {
-  return jwt.sign(payload, getSecret('JWT_REFRESH_SECRET'), { expiresIn: REFRESH_TOKEN_TTL });
+  return jwt.sign({ jti: crypto.randomUUID(), ...payload }, getSecret('JWT_REFRESH_SECRET'), { expiresIn: REFRESH_TOKEN_TTL });
 }
 
 function verifyAccessToken(token) {
